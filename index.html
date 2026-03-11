@@ -1065,7 +1065,7 @@ body {
       <div class="battle-hand-cards" id="battle-hand-cards"></div>
       <div class="confirm-btn-area">
         <div class="status-msg" id="battle-status-msg"></div>
-        <button class="btn btn-primary" id="battle-confirm-btn" onclick="confirmAction()" style="display:none;max-width:240px;">CONFIRM</button>
+        <button class="btn btn-primary" id="battle-confirm-btn" onclick="(this.dataset.peekMode==='1'?confirmPeekAction():confirmAction())" style="display:none;max-width:240px;">CONFIRM</button>
       </div>
     </div>
   </div>
@@ -1132,13 +1132,13 @@ const CARD_DB = [
     desc:'HP30回復 + ダメージ+5', detail:'炎の翼が包み込み、傷を癒しつつ闘志を燃やす。HP30回復＆このターンの与ダメ+5。', effect:{heal:30, dmgUp:5} },
   { id:'s2', rank:'S', name:'鉄壁の盾', icon:'🛡️', cost:20,
     desc:'次の被ダメを0にする', detail:'完全無敵の盾を展開。このターン、相手からのダメージを完全に0にする鉄壁の守り。', effect:{shield:999} },
-  { id:'s3', rank:'S', name:'運命操作', icon:'🎲', cost:20,
+  { id:'s3', rank:'S', name:'運命操作1', icon:'✊', cost:20,
     desc:'相手の手を「グー」に強制', detail:'相手の意思を歪め、グーしか出せなくする。相手の手を強制的に「グー✊」に変える。', effect:{forceEnemy:'guu'} },
   { id:'s4', rank:'S', name:'クリティカルブースト', icon:'⚡', cost:20,
     desc:'ダメージ+20', detail:'全力を解放した一撃。このターンの与えるダメージを+20する最大火力カード。', effect:{dmgUp:20} },
-  { id:'s5', rank:'S', name:'命運の掌握', icon:'✋', cost:20,
+  { id:'s5', rank:'S', name:'運命操作2', icon:'✋', cost:20,
     desc:'相手の手を「パー」に強制', detail:'相手の手首を掌握し、パーしか出せなくする。相手の手を強制的に「パー✋」に変える。', effect:{forceEnemy:'paa'} },
-  { id:'s6', rank:'S', name:'剪断の刃', icon:'✌️', cost:20,
+  { id:'s6', rank:'S', name:'運命操作3', icon:'✌️', cost:20,
     desc:'相手の手を「チョキ」に強制', detail:'精神に割り込み、チョキしか出せなくする。相手の手を強制的に「チョキ✌️」に変える。', effect:{forceEnemy:'choki'} },
   { id:'s7', rank:'S', name:'ライフスティール', icon:'💀', cost:20,
     desc:'相手HP-15、自HP+15', detail:'闇の力で相手の生命力を奪い取る。相手のHPを15吸収し自分のHPに変換する。', effect:{drain:15} },
@@ -1234,6 +1234,8 @@ const CARD_DB = [
     desc:'相手の手をランダムに変える', detail:'混沌が相手の意識を乱す。相手の出す手をランダムに書き換える予測不能の妨害カード。', effect:{forceEnemyRandom:true} },
   { id:'s20', rank:'S', name:'オメガドレイン', icon:'🔮', cost:20,
     desc:'相手HP-20、自HP+20', detail:'究極の吸収魔法。相手のHPを20奪い自分のHPに変換する最強の吸収カード。', effect:{drain:20} },
+  { id:'s21', rank:'S', name:'エクストラドロー', icon:'🃏', cost:20,
+    desc:'次のターン追加で5枚ドロー', detail:'次のターンのドロー枚数を+5増加させる。手札を一気に充実させる戦略型サポートカード。', effect:{extraDraw:5} },
 
   // === NEW A RANK (cost 10) ===
   { id:'a13', rank:'A', name:'ダブルエッジ', icon:'⚔️', cost:10,
@@ -1256,6 +1258,31 @@ const CARD_DB = [
     desc:'HPが低いほどダメ増加', detail:'追い詰められた時こそ真価を発揮。自分の残りHPが少ないほど与ダメが増加する逆転型カード（最大+20）。', effect:{lowHpBoost:true} },
   { id:'a22', rank:'A', name:'トリプルドロー', icon:'🃏', cost:10,
     desc:'次のターン追加で3枚ドロー', detail:'次のターンのドロー枚数を+3増加させる。手札を一気に充実させる戦略型サポートカード。', effect:{extraDraw:3} },
+
+  // === NEW CARDS ===
+  // B rank
+  { id:'b19', rank:'B', name:'エクストラチャンス', icon:'🎴', cost:5,
+    desc:'次のターン1枚追加ドロー', detail:'余力を残して次のターンに備える。次のターンのドロー枚数を+1増加させる軽量サポートカード。', effect:{extraDraw:1} },
+
+  // S rank
+  { id:'s22', rank:'S', name:'タイムリコール', icon:'🔄', cost:20,
+    desc:'前のターン使用したカードを再ドロー', detail:'時を巻き戻し、使用済みカードを手元に引き戻す。前のターンに使ったカードを手札に再び加える唯一無二のSカード。', effect:{recallLastUsed:true} },
+  { id:'s23', rank:'S', name:'サードアイ', icon:'👁️', cost:20,
+    desc:'相手の手を盗み見し再選択', detail:'第三の眼で相手の手を見通す。相手が選んだじゃんけんの手を事前に確認し、自分の手を選び直すことができる。', effect:{peekAndReselect:true} },
+  { id:'s24', rank:'S', name:'ダメージリターン2x', icon:'🔁', cost:20,
+    desc:'受けたダメージを2倍返し', detail:'最強の反射魔法。このターン自分が受けたダメージを2倍にして相手に返す。', effect:{counterMultiplier:2.0} },
+  { id:'s25', rank:'S', name:'殉教者の呪い', icon:'💀', cost:20,
+    desc:'被ダメ3倍・必ず負け、生存で2倍返し', detail:'己を犠牲にする究極の賭け。このターン相手から受けるダメージが3倍になり必ずじゃんけんに負ける。しかし生き残れた場合、受けたダメージをさらに2倍にして相手に返す。', effect:{martyrdom:true} },
+  { id:'s26', rank:'S', name:'カードスティール', icon:'🕵️', cost:20,
+    desc:'相手のドロー済みカード2枚を次ターンデッキに戻す', detail:'相手の手札に忍び込み、カード2枚を奪い去る。相手のドロー済みカード2枚を選択し、次のターン相手のデッキに戻す。', effect:{stealCards:2} },
+
+  // A rank
+  { id:'a23', rank:'A', name:'ダメージリターン1.5x', icon:'⚡', cost:10,
+    desc:'受けたダメージを1.5倍返し', detail:'受けた攻撃をさらに強化して返す反撃カード。このターン自分が受けたダメージを1.5倍にして相手に与える。', effect:{counterMultiplier:1.5} },
+  { id:'a24', rank:'A', name:'ハンドスナッチ', icon:'🤲', cost:10,
+    desc:'相手の手札から1枚を自手札に加える', detail:'相手の手札に手を伸ばし、カードを1枚奪い取る。相手の手札から1枚選択して自分の手札に加える。', effect:{snatchCard:1} },
+  { id:'a25', rank:'A', name:'ダブルリスク', icon:'⚠️', cost:10,
+    desc:'両者の受けるダメージが2倍になる', detail:'危険な賭けに出る。このターン自分と相手の双方が受けるダメージが2倍になる諸刃の剣カード。', effect:{doubleAllDamage:true} },
 ];
 
 // ============================================================
@@ -1280,6 +1307,12 @@ let battle = {
   playerForced: null, enemyForced: null,
   playerDrawDmg: 0, enemyDrawDmg: 0,
   playerDeckRemain: [], enemyDeckRemain: [],
+  // New card effects
+  lastUsedPlayerCards: [], lastUsedEnemyCards: [],
+  playerCounterMultiplier: 0, enemyCounterMultiplier: 0,
+  playerMartyrdom: false, enemyMartyrdom: false,
+  playerDoubleAllDamage: false, enemyDoubleAllDamage: false,
+  playerPeekReselect: false,
 };
 
 const RPS_EMOJI = { guu:'✊', paa:'✋', choki:'✌️' };
@@ -1924,6 +1957,41 @@ function confirmAction() {
   submitMyAction();
 }
 
+function showPeekReselectUI(enemyHand) {
+  // 相手の手を表示し、再選択を促す
+  const RPS_NAME_JP = { guu:'グー ✊', paa:'パー ✋', choki:'チョキ ✌️' };
+  const RPS_EMOJI_MAP = { guu:'✊', paa:'✋', choki:'✌️' };
+  setArenaStatus(`👁️ サードアイ発動！相手の手：${RPS_NAME_JP[enemyHand]}`);
+  
+  // 再選択UIを表示
+  showHandSelectArea(true);
+  document.getElementById('battle-status-msg').textContent = `👁️ 相手は「${RPS_NAME_JP[enemyHand]}」！手を選び直してください`;
+  
+  // Highlight enemy hand in arena
+  const eEmoji = document.getElementById('enemy-hand-emoji');
+  eEmoji.textContent = RPS_EMOJI_MAP[enemyHand];
+  eEmoji.style.filter = 'drop-shadow(0 0 20px rgba(255,0,110,0.8))';
+
+  // 確認ボタンに再選択フラグをセット
+  const btn = document.getElementById('battle-confirm-btn');
+  btn.style.display = 'block';
+  btn.dataset.peekMode = '1';
+}
+
+function confirmPeekAction() {
+  if (!battle.selectedHand) return;
+  Audio.sfx('confirm');
+  showHandSelectArea(false);
+  setArenaStatus('');
+  document.getElementById('battle-status-msg').textContent = '';
+  document.getElementById('enemy-hand-emoji').textContent = '❓';
+  document.getElementById('enemy-hand-emoji').style.filter = '';
+  const btn = document.getElementById('battle-confirm-btn');
+  btn.dataset.peekMode = '0';
+  battle.playerPeekReselect = false;
+  resolveRound();
+}
+
 // 自分の行動をFirebaseに書き込み、相手の行動を待つ
 async function submitMyAction() {
   const { db, ref, set, onValue, off } = window._FB;
@@ -1951,7 +2019,12 @@ async function submitMyAction() {
     // enemyHandのインデックス合わせ（表示用に使う分だけ）
     // cards配列はcard idの配列として使う（AI版と同様）
 
-    resolveRound();
+    // サードアイ：相手の手を盗み見して再選択
+    if (battle.playerPeekReselect) {
+      showPeekReselectUI(battle.enemySelectedHand);
+    } else {
+      resolveRound();
+    }
   });
 }
 
@@ -2206,6 +2279,78 @@ function applyCardEffect(owner, cardId) {
     if (isPlayer) battle.playerExtraDraw = (battle.playerExtraDraw||0) + e.extraDraw;
     else battle.enemyExtraDraw = (battle.enemyExtraDraw||0) + e.extraDraw;
   }
+  if (e.recallLastUsed) {
+    // 前のターン使ったカードを手札に再追加
+    const lastUsed = isPlayer ? battle.lastUsedPlayerCards : battle.lastUsedEnemyCards;
+    if (lastUsed && lastUsed.length > 0) {
+      if (isPlayer) {
+        battle.playerHand.push(...lastUsed);
+        spawnEffectToast('カード回収！', '#00f5ff', true);
+      } else {
+        battle.enemyHand.push(...lastUsed);
+      }
+    }
+  }
+  if (e.peekAndReselect) {
+    // プレイヤーが使った場合：相手の手を盗み見して再選択できる
+    if (isPlayer) {
+      battle.playerPeekReselect = true;
+    }
+    // AIが使った場合：AIは自動的に最善手を選ぶ（resolveHandBattleで処理）
+    else {
+      battle.enemyPeekReselect = true;
+    }
+  }
+  if (e.counterMultiplier) {
+    if (isPlayer) battle.playerCounterMultiplier = Math.max(battle.playerCounterMultiplier||0, e.counterMultiplier);
+    else battle.enemyCounterMultiplier = Math.max(battle.enemyCounterMultiplier||0, e.counterMultiplier);
+  }
+  if (e.martyrdom) {
+    if (isPlayer) battle.playerMartyrdom = true;
+    else battle.enemyMartyrdom = true;
+  }
+  if (e.doubleAllDamage) {
+    battle.playerDoubleAllDamage = true;
+    battle.enemyDoubleAllDamage = true;
+  }
+  if (e.stealCards) {
+    // 相手の手札からカードを奪う（プレイヤーが使った場合）
+    if (isPlayer) {
+      const count = Math.min(e.stealCards, battle.enemyHand.length);
+      if (count > 0) {
+        // 相手のデッキ先頭に戻す（次ターンにドローされる）
+        const stolen = battle.enemyHand.splice(0, count);
+        battle.enemyDeckRemain.unshift(...stolen);
+        spawnEffectToast(`相手カード${count}枚をデッキに戻した！`, '#ff8c00', false);
+      }
+    } else {
+      const count = Math.min(e.stealCards, battle.playerHand.length);
+      if (count > 0) {
+        const stolen = battle.playerHand.splice(0, count);
+        battle.playerDeckRemain.unshift(...stolen);
+        spawnEffectToast(`カード${count}枚がデッキに戻された！`, '#ff006e', true);
+      }
+    }
+  }
+  if (e.snatchCard) {
+    // 相手の手札から1枚選んで自分の手札へ（プレイヤーが使った場合は自動選択）
+    if (isPlayer) {
+      if (battle.enemyHand.length > 0) {
+        const idx = Math.floor(Math.random() * battle.enemyHand.length);
+        const snatched = battle.enemyHand.splice(idx, 1)[0];
+        battle.playerHand.push(snatched);
+        const c = getCard(snatched);
+        spawnEffectToast(`${c ? c.name : 'カード'}を奪取！`, '#ffd600', true);
+      }
+    } else {
+      if (battle.playerHand.length > 0) {
+        const idx = Math.floor(Math.random() * battle.playerHand.length);
+        const snatched = battle.playerHand.splice(idx, 1)[0];
+        battle.enemyHand.push(snatched);
+        spawnEffectToast('カードが奪われた！', '#ff006e', true);
+      }
+    }
+  }
 }
 
 function resolveHandBattle() {
@@ -2271,17 +2416,32 @@ function resolveHandBattle() {
     let baseDmg = 20;
     let playerTookDmg = 0, enemyTookDmg = 0;
 
-    if (result === 'draw') {
+    // martyrdom: force loss and 3x damage for that player
+    let playerForcedLose = battle.playerMartyrdom;
+    let enemyForcedLose = battle.enemyMartyrdom;
+
+    // Recalculate result if martyrdom active
+    let effectiveResult = result;
+    if (playerForcedLose && !enemyForcedLose) effectiveResult = 'enemy';
+    else if (enemyForcedLose && !playerForcedLose) effectiveResult = 'player';
+
+    if (effectiveResult === 'draw') {
       let dmg = 5;
-      if (!battle.playerShield) playerTookDmg = Math.max(0, dmg - battle.playerDmgReduce);
-      if (!battle.enemyShield) enemyTookDmg = Math.max(0, dmg - battle.enemyDmgReduce);
+      let pDmgMult = (battle.playerDoubleAllDamage || battle.enemyDoubleAllDamage) ? 2 : 1;
+      let eDmgMult = pDmgMult;
+      if (!battle.playerShield) playerTookDmg = Math.max(0, dmg - battle.playerDmgReduce) * pDmgMult;
+      if (!battle.enemyShield) enemyTookDmg = Math.max(0, dmg - battle.enemyDmgReduce) * eDmgMult;
       if (battle.playerDrawDmg) enemyTookDmg += battle.playerDrawDmg;
       if (battle.enemyDrawDmg) playerTookDmg += battle.enemyDrawDmg;
-    } else if (result === 'player') {
+    } else if (effectiveResult === 'player') {
       let dmg = baseDmg + battle.playerDmgUp;
+      if (battle.enemyMartyrdom) dmg *= 3;
+      if (battle.playerDoubleAllDamage || battle.enemyDoubleAllDamage) dmg *= 2;
       if (!battle.enemyShield) enemyTookDmg = Math.max(0, dmg - battle.enemyDmgReduce);
     } else {
       let dmg = baseDmg + battle.enemyDmgUp;
+      if (battle.playerMartyrdom) dmg *= 3;
+      if (battle.playerDoubleAllDamage || battle.enemyDoubleAllDamage) dmg *= 2;
       if (!battle.playerShield) playerTookDmg = Math.max(0, dmg - battle.playerDmgReduce);
     }
 
@@ -2314,12 +2474,48 @@ function resolveHandBattle() {
       updateHPDisplay();
     }
 
+    // counterMultiplier: 受けたダメージ×倍率で相手に返す
+    if (battle.playerCounterMultiplier && playerTookDmg > 0) {
+      const cd = Math.floor(playerTookDmg * battle.playerCounterMultiplier);
+      battle.enemyHP = Math.max(0, battle.enemyHP - cd);
+      spawnDmgNumber('-' + cd + '🔁', '#ff8c00', false);
+      updateHPDisplay();
+    }
+    if (battle.enemyCounterMultiplier && enemyTookDmg > 0) {
+      const cd = Math.floor(enemyTookDmg * battle.enemyCounterMultiplier);
+      battle.playerHP = Math.max(0, battle.playerHP - cd);
+      spawnDmgNumber('-' + cd + '🔁', '#ff8c00', true);
+      updateHPDisplay();
+    }
+
+    // martyrdom: 生存していれば受けたダメージ×2を相手に返す
+    if (battle.playerMartyrdom && battle.playerHP > 0 && playerTookDmg > 0) {
+      const retDmg = playerTookDmg * 2;
+      battle.enemyHP = Math.max(0, battle.enemyHP - retDmg);
+      spawnDmgNumber('殉教 -' + retDmg, '#ff006e', false);
+      updateHPDisplay();
+    }
+    if (battle.enemyMartyrdom && battle.enemyHP > 0 && enemyTookDmg > 0) {
+      const retDmg = enemyTookDmg * 2;
+      battle.playerHP = Math.max(0, battle.playerHP - retDmg);
+      spawnDmgNumber('殉教 -' + retDmg, '#ff006e', true);
+      updateHPDisplay();
+    }
+
+    // lastUsedCards を記録
+    battle.lastUsedPlayerCards = battle.selectedCards.map(k => k.split('_')[0]);
+    battle.lastUsedEnemyCards = [...battle.enemySelectedCards];
+
     // Reset turn buffs
     battle.playerDmgUp = 0; battle.playerDmgReduce = 0; battle.playerShield = false;
     battle.enemyDmgUp = 0; battle.enemyDmgReduce = 0; battle.enemyShield = false;
     battle.playerForced = null; battle.enemyForced = null;
     battle.playerDrawDmg = 0; battle.enemyDrawDmg = 0;
     battle.playerReflect = 0; battle.enemyReflect = 0;
+    battle.playerCounterMultiplier = 0; battle.enemyCounterMultiplier = 0;
+    battle.playerMartyrdom = false; battle.enemyMartyrdom = false;
+    battle.playerDoubleAllDamage = false; battle.enemyDoubleAllDamage = false;
+    battle.playerPeekReselect = false; battle.enemyPeekReselect = false;
 
     showRoundResult(result, ph, eh, playerTookDmg, enemyTookDmg);
     if (playerTookDmg > 0) { flashScreen('flash-red'); spawnDmgNumber('-' + playerTookDmg, '#ff006e', true); Audio.sfx('damage'); }
