@@ -921,6 +921,54 @@ body {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--surface); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ===== HAND SELECT MODAL (snatch / steal) ===== */
+#hand-select-modal {
+  position: fixed; inset: 0; z-index: 95;
+  background: rgba(0,0,0,0.82);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 20px; gap: 16px;
+  backdrop-filter: blur(3px);
+}
+#hand-select-modal.hidden { display: none; }
+.hsm-title {
+  font-family: 'Orbitron', monospace; font-size: 15px;
+  color: var(--accent3); letter-spacing: 2px; text-align: center;
+  font-weight: 700;
+}
+.hsm-subtitle {
+  font-size: 12px; color: var(--text-dim); text-align: center;
+  font-family: 'Orbitron', monospace;
+}
+.hsm-cards {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  justify-content: center; max-width: 400px;
+}
+.hsm-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 12px; padding: 10px 14px;
+  cursor: pointer; text-align: center;
+  transition: all 0.2s; min-width: 100px;
+}
+.hsm-card:active { transform: scale(0.95); }
+.hsm-card.selected {
+  border-color: var(--accent3);
+  box-shadow: 0 0 16px rgba(255,214,0,0.4);
+  background: rgba(255,214,0,0.08);
+}
+.hsm-card-icon { font-size: 28px; }
+.hsm-card-name { font-size: 12px; font-weight: 700; color: var(--text); margin-top: 4px; }
+.hsm-card-rank { font-family: 'Orbitron', monospace; font-size: 10px; margin-top: 2px; }
+.hsm-confirm-btn {
+  background: linear-gradient(135deg, #ffd600, #ff8c00);
+  color: #1a0a00; border: none; border-radius: 10px;
+  padding: 12px 32px; font-family: 'Orbitron', monospace;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  letter-spacing: 2px;
+}
+.hsm-confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -1100,6 +1148,14 @@ body {
 
 <!-- FLASH -->
 <div class="screen-flash" id="screen-flash"></div>
+
+<!-- HAND SELECT MODAL (snatch/steal card selection) -->
+<div id="hand-select-modal" class="hidden">
+  <div class="hsm-title" id="hsm-title">相手の手札を選択</div>
+  <div class="hsm-subtitle" id="hsm-subtitle"></div>
+  <div class="hsm-cards" id="hsm-cards"></div>
+  <button class="hsm-confirm-btn" id="hsm-confirm-btn" onclick="confirmHandSelectModal()" disabled>CONFIRM</button>
+</div>
 
 <!-- CARD DETAIL POPUP -->
 <div class="cdp-overlay" id="cdp-overlay" onclick="closeCardDetail()"></div>
@@ -2055,7 +2111,15 @@ function confirmPeekAction() {
   const btn = document.getElementById('battle-confirm-btn');
   btn.dataset.peekMode = '0';
   battle.playerPeekReselect = false;
-  resolveRound();
+
+  // カード効果フロー中に発動した場合はコールバックで再開
+  if (window._peekResumeCallback) {
+    const cb = window._peekResumeCallback;
+    window._peekResumeCallback = null;
+    cb();
+  } else {
+    resolveRound();
+  }
 }
 
 // 自分の行動をFirebaseに書き込み、相手の行動を待つ
@@ -2255,10 +2319,14 @@ function nextCardReveal() {
   const item = queue[idx];
   if (item) {
     Audio.sfx('activate');
+    window._cardRevealWaiting = false;
     applyCardEffect(item.owner, item.cardId);
     const card = getCard(item.cardId);
     if (card) spawnEffectToast(card.desc, RANK_GLOW_COLOR[card.rank] || '#fff', item.owner === 'player');
   }
+
+  // インタラクション待ち中なら処理を止める（snatch/steal/peek UI待ち）
+  if (window._cardRevealWaiting) return;
 
   if (idx >= queue.length - 1) {
     document.getElementById('resolution-overlay').style.display = 'none';
@@ -2266,6 +2334,76 @@ function nextCardReveal() {
   } else {
     renderSpotlight(queue, idx + 1);
   }
+}
+
+// インタラクション完了後に呼び出してカード演出を再開する
+function resumeCardReveal() {
+  document.getElementById('hand-select-modal').classList.add('hidden');
+  window._cardRevealWaiting = false;
+  const queue = window._revealQueue;
+  const btn = document.getElementById('next-card-btn');
+  const idx = btn._idx;
+  if (idx >= queue.length - 1) {
+    document.getElementById('resolution-overlay').style.display = 'none';
+    resolveHandBattle();
+  } else {
+    renderSpotlight(queue, idx + 1);
+  }
+}
+
+// 手札選択モーダルを表示する汎用関数
+// cards: カードID配列, maxSelect: 最大選択枚数, title/subtitle: 表示文字列, onConfirm: 選択インデックス配列を受け取るコールバック
+function showHandSelectModal(cards, maxSelect, title, subtitle, onConfirm) {
+  if (cards.length === 0) { onConfirm([]); return; }
+  window._cardRevealWaiting = true;
+  window._hsmCallback = onConfirm;
+  window._hsmMaxSelect = maxSelect;
+  window._hsmSelectedIndices = [];
+
+  document.getElementById('hsm-title').textContent = title;
+  document.getElementById('hsm-subtitle').textContent = subtitle;
+
+  const container = document.getElementById('hsm-cards');
+  container.innerHTML = '';
+  cards.forEach((cardId, i) => {
+    const card = getCard(cardId);
+    const el = document.createElement('div');
+    el.className = 'hsm-card';
+    el.dataset.idx = i;
+    const rankColor = { S: 'var(--s-color)', A: 'var(--a-color)', B: 'var(--b-color)' }[card ? card.rank : 'B'] || '#fff';
+    el.innerHTML = `
+      <div class="hsm-card-icon">${card ? card.icon : '🃏'}</div>
+      <div class="hsm-card-name">${card ? card.name : cardId}</div>
+      <div class="hsm-card-rank" style="color:${rankColor}">${card ? card.rank : '?'}</div>
+    `;
+    el.onclick = () => {
+      const idx = parseInt(el.dataset.idx);
+      const selIdx = window._hsmSelectedIndices.indexOf(idx);
+      if (selIdx >= 0) {
+        // 選択解除
+        window._hsmSelectedIndices.splice(selIdx, 1);
+        el.classList.remove('selected');
+      } else if (window._hsmSelectedIndices.length < window._hsmMaxSelect) {
+        // 選択追加
+        window._hsmSelectedIndices.push(idx);
+        el.classList.add('selected');
+      }
+      document.getElementById('hsm-confirm-btn').disabled =
+        window._hsmSelectedIndices.length === 0;
+    };
+    container.appendChild(el);
+  });
+
+  document.getElementById('hsm-confirm-btn').disabled = true;
+  document.getElementById('hand-select-modal').classList.remove('hidden');
+}
+
+function confirmHandSelectModal() {
+  const cb = window._hsmCallback;
+  const selected = [...window._hsmSelectedIndices];
+  window._hsmCallback = null;
+  window._hsmSelectedIndices = [];
+  if (cb) cb(selected);
 }
 
 function spawnEffectToast(text, color, isPlayer) {
@@ -2387,6 +2525,28 @@ function applyCardEffect(owner, cardId) {
     // プレイヤーが使った場合：相手の手を盗み見して再選択できる
     if (isPlayer) {
       battle.playerPeekReselect = true;
+      // カード効果解決フロー中に発動した場合は、ここで盗み見UIを表示して処理を中断
+      if (window._revealQueue && window._revealQueue.length > 0) {
+        window._cardRevealWaiting = true;
+        // resolution-overlayを一時的に非表示にして盗み見UIを前面に
+        document.getElementById('resolution-overlay').style.display = 'none';
+        showPeekReselectUI(battle.enemySelectedHand);
+        // confirmPeekActionの代わりにカード演出再開するよう上書き
+        window._peekResumeCallback = () => {
+          battle.playerPeekReselect = false;
+          window._cardRevealWaiting = false;
+          // resolution-overlayを再表示して次のカードへ
+          const queue = window._revealQueue;
+          const btn = document.getElementById('next-card-btn');
+          const idx = btn._idx;
+          if (idx >= queue.length - 1) {
+            resolveHandBattle();
+          } else {
+            document.getElementById('resolution-overlay').style.display = 'flex';
+            renderSpotlight(queue, idx + 1);
+          }
+        };
+      }
     }
     // AIが使った場合：AIは自動的に最善手を選ぶ（resolveHandBattleで処理）
     else {
@@ -2406,14 +2566,25 @@ function applyCardEffect(owner, cardId) {
     battle.enemyDoubleAllDamage = true;
   }
   if (e.stealCards) {
-    // 相手の手札からカードを奪う（プレイヤーが使った場合）
+    // 相手の手札からカードを選んでデッキに戻す
     if (isPlayer) {
       const count = Math.min(e.stealCards, battle.enemyHand.length);
       if (count > 0) {
-        // 相手のデッキ先頭に戻す（次ターンにドローされる）
-        const stolen = battle.enemyHand.splice(0, count);
-        battle.enemyDeckRemain.unshift(...stolen);
-        spawnEffectToast(`相手カード${count}枚をデッキに戻した！`, '#ff8c00', false);
+        // プレイヤーが選択するUIを表示
+        showHandSelectModal(
+          battle.enemyHand,
+          count,
+          `相手の手札から${count}枚選択！`,
+          `デッキに戻すカードを${count}枚選んでください`,
+          (selectedIndices) => {
+            // インデックスを降順でソートして後ろから削除（ずれ防止）
+            selectedIndices.sort((a, b) => b - a);
+            const stolen = selectedIndices.map(i => battle.enemyHand.splice(i, 1)[0]);
+            battle.enemyDeckRemain.unshift(...stolen);
+            spawnEffectToast(`相手カード${stolen.length}枚をデッキに戻した！`, '#ff8c00', false);
+            resumeCardReveal();
+          }
+        );
       }
     } else {
       const count = Math.min(e.stealCards, battle.playerHand.length);
@@ -2425,14 +2596,24 @@ function applyCardEffect(owner, cardId) {
     }
   }
   if (e.snatchCard) {
-    // 相手の手札から1枚選んで自分の手札へ（プレイヤーが使った場合は自動選択）
+    // 相手の手札から1枚選んで自分の手札へ
     if (isPlayer) {
       if (battle.enemyHand.length > 0) {
-        const idx = Math.floor(Math.random() * battle.enemyHand.length);
-        const snatched = battle.enemyHand.splice(idx, 1)[0];
-        battle.playerHand.push(snatched);
-        const c = getCard(snatched);
-        spawnEffectToast(`${c ? c.name : 'カード'}を奪取！`, '#ffd600', true);
+        // プレイヤーが選択するUIを表示
+        showHandSelectModal(
+          battle.enemyHand,
+          1,
+          '相手の手札から1枚奪取！',
+          '奪うカードを1枚選んでください',
+          (selectedIndices) => {
+            const idx = selectedIndices[0];
+            const snatched = battle.enemyHand.splice(idx, 1)[0];
+            battle.playerHand.push(snatched);
+            const c = getCard(snatched);
+            spawnEffectToast(`${c ? c.name : 'カード'}を奪取！`, '#ffd600', true);
+            resumeCardReveal();
+          }
+        );
       }
     } else {
       if (battle.playerHand.length > 0) {
