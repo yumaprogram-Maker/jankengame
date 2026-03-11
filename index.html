@@ -1,0 +1,2696 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>JANKEN CLASH ONLINE</title>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getDatabase, ref, set, get, onValue, push, remove, update, serverTimestamp, off }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+  // ============================================================
+  // FIREBASE CONFIG
+  // ============================================================
+  const firebaseConfig = {
+    apiKey:            "AIzaSyA5FuJ16zMEdFJKoVwLQhN5LQMLMCdJBFw",
+    authDomain:        "janken-online2.firebaseapp.com",
+    databaseURL:       "https://janken-online2-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:         "janken-online2",
+    storageBucket:     "janken-online2.firebasestorage.app",
+    messagingSenderId: "153065272959",
+    appId:             "1:153065272959:web:6183eb4a4ae3336b29714a",
+    measurementId:     "G-Y7YZC472ZZ"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  // グローバルに公開（他のスクリプトから使えるように）
+  window._FB = { db, ref, set, get, onValue, push, remove, update, serverTimestamp, off };
+  window._FB_READY = true;
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;700;900&display=swap');
+
+:root {
+  --bg: #05050f;
+  --surface: #0d0d1e;
+  --surface2: #12122a;
+  --border: #2a2a5a;
+  --accent: #00f5ff;
+  --accent2: #ff006e;
+  --accent3: #ffd600;
+  --text: #e0e0ff;
+  --text-dim: #8888aa;
+  --s-color: #ff006e;
+  --a-color: #ff8c00;
+  --b-color: #00b4ff;
+  --glow: 0 0 20px rgba(0,245,255,0.5);
+  --glow-red: 0 0 20px rgba(255,0,110,0.5);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
+
+/* ===== BG EFFECT ===== */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+.bg-glow {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0,245,255,0.08) 0%, transparent 60%),
+              radial-gradient(ellipse at 50% 100%, rgba(255,0,110,0.08) 0%, transparent 60%);
+}
+
+/* ===== SCREENS ===== */
+.screen {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 20px;
+  transition: opacity 0.4s, transform 0.4s;
+}
+.screen.hidden { opacity: 0; pointer-events: none; transform: scale(0.96); }
+
+/* ===== TITLE ===== */
+#screen-title {
+  background: linear-gradient(180deg, #05050f 0%, #0a0a20 100%);
+  gap: 0;
+}
+.title-logo {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(36px, 12vw, 60px);
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-align: center;
+  line-height: 1;
+  background: linear-gradient(135deg, #00f5ff, #ff006e, #ffd600);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 30px rgba(0,245,255,0.6));
+  animation: titlePulse 3s ease-in-out infinite;
+}
+@keyframes titlePulse {
+  0%,100% { filter: drop-shadow(0 0 30px rgba(0,245,255,0.6)); }
+  50% { filter: drop-shadow(0 0 60px rgba(0,245,255,1)) drop-shadow(0 0 100px rgba(255,0,110,0.5)); }
+}
+.title-sub {
+  font-family: 'Orbitron', monospace;
+  font-size: 12px; letter-spacing: 8px;
+  color: var(--accent); margin: 8px 0 40px;
+  opacity: 0.8;
+}
+.title-rps {
+  display: flex; gap: 20px; margin-bottom: 40px;
+}
+.title-rps span {
+  font-size: 50px;
+  animation: float 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+}
+.title-rps span:nth-child(2) { animation-delay: 0.3s; }
+.title-rps span:nth-child(3) { animation-delay: 0.6s; }
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+  border: none; cursor: pointer; font-family: 'Orbitron', monospace;
+  font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  transition: all 0.2s; position: relative; overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  opacity: 0; transition: opacity 0.2s;
+}
+.btn:active::before { opacity: 1; }
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: linear-gradient(135deg, #00c8ff, #0062ff);
+  color: white; border-radius: 12px;
+  padding: 16px 40px; font-size: 16px;
+  box-shadow: 0 0 30px rgba(0,245,255,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  width: 100%; max-width: 300px;
+}
+.btn-primary:hover { box-shadow: 0 0 50px rgba(0,245,255,0.7), inset 0 1px 0 rgba(255,255,255,0.2); }
+
+.btn-danger {
+  background: linear-gradient(135deg, #ff006e, #cc0055);
+  color: white; border-radius: 12px;
+  padding: 16px 40px; font-size: 16px;
+  box-shadow: 0 0 30px rgba(255,0,110,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  width: 100%; max-width: 300px;
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, #ffd600, #ff8c00);
+  color: #1a0a00; border-radius: 12px;
+  padding: 18px 40px; font-size: 18px;
+  box-shadow: 0 0 40px rgba(255,214,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+  width: 100%; max-width: 300px;
+}
+
+.btn-sm {
+  padding: 10px 20px; font-size: 12px; border-radius: 8px;
+  background: var(--surface2); color: var(--accent);
+  border: 1px solid var(--accent); letter-spacing: 1px;
+}
+.btn-sm.active {
+  background: var(--accent); color: var(--bg);
+}
+
+/* ===== INPUT ===== */
+.input-field {
+  background: var(--surface2); border: 2px solid var(--border);
+  color: var(--text); border-radius: 12px; padding: 14px 18px;
+  font-size: 18px; font-family: 'Noto Sans JP', sans-serif;
+  width: 100%; max-width: 300px; outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input-field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(0,245,255,0.3);
+}
+
+/* ===== NAME SCREEN ===== */
+#screen-name { gap: 24px; }
+.screen-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 20px; color: var(--accent);
+  letter-spacing: 3px; text-align: center;
+}
+.screen-subtitle { color: var(--text-dim); font-size: 14px; text-align: center; }
+
+/* ===== DECK SCREEN ===== */
+#screen-deck {
+  overflow-y: auto;
+  justify-content: flex-start;
+  padding-top: 16px;
+  padding-bottom: 100px;
+  gap: 0;
+}
+.deck-header {
+  width: 100%; max-width: 480px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 4px 12px;
+}
+.deck-cost-display {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px; color: var(--text-dim);
+}
+.deck-cost-display span {
+  color: var(--accent3); font-size: 16px; font-weight: 700;
+}
+.deck-cost-bar {
+  width: 100%; max-width: 480px;
+  height: 6px; background: var(--surface2);
+  border-radius: 3px; margin-bottom: 16px; overflow: hidden;
+}
+.deck-cost-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00f5ff, #ff006e);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ===== RANK TABS ===== */
+.rank-tabs {
+  display: flex; gap: 0; width: 100%; max-width: 480px;
+  border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--border); margin-bottom: 14px;
+  flex-shrink: 0;
+}
+.rank-tab {
+  flex: 1; padding: 10px 4px; text-align: center; cursor: pointer;
+  font-family: 'Orbitron', monospace; font-weight: 900; font-size: 16px;
+  letter-spacing: 1px; transition: all 0.2s;
+  background: var(--surface2); border: none; color: var(--text-dim);
+  position: relative;
+}
+.rank-tab::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 3px; background: transparent; transition: background 0.2s;
+}
+.rank-tab.tab-S { }
+.rank-tab.tab-S.active { background: rgba(255,0,110,0.15); color: var(--s-color); }
+.rank-tab.tab-S.active::after { background: var(--s-color); }
+.rank-tab.tab-A.active { background: rgba(255,140,0,0.15); color: var(--a-color); }
+.rank-tab.tab-A.active::after { background: var(--a-color); }
+.rank-tab.tab-B.active { background: rgba(0,180,255,0.15); color: var(--b-color); }
+.rank-tab.tab-B.active::after { background: var(--b-color); }
+.rank-tab .tab-count {
+  font-size: 9px; font-weight: 400; display: block;
+  letter-spacing: 0px; margin-top: 2px; color: inherit; opacity: 0.7;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%; max-width: 480px;
+}
+.card-item {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.card-item::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(0,245,255,0.05), transparent);
+  opacity: 0; transition: opacity 0.2s;
+}
+.card-item.selected { border-color: var(--accent3); box-shadow: 0 0 20px rgba(255,214,0,0.3); background: rgba(255,214,0,0.05); }
+.card-item.selected-S { border-color: var(--s-color) !important; box-shadow: 0 0 20px rgba(255,0,110,0.35) !important; background: rgba(255,0,110,0.06) !important; }
+.card-item.selected-A { border-color: var(--a-color) !important; box-shadow: 0 0 20px rgba(255,140,0,0.35) !important; background: rgba(255,140,0,0.06) !important; }
+.card-item.selected-B { border-color: var(--b-color) !important; box-shadow: 0 0 20px rgba(0,180,255,0.35) !important; background: rgba(0,180,255,0.06) !important; }
+.card-item:active { transform: scale(0.97); }
+
+.card-rank {
+  position: absolute; top: 8px; right: 10px;
+  font-family: 'Orbitron', monospace; font-weight: 900; font-size: 14px;
+}
+.rank-S { color: var(--s-color); text-shadow: 0 0 10px var(--s-color); }
+.rank-A { color: var(--a-color); text-shadow: 0 0 10px var(--a-color); }
+.rank-B { color: var(--b-color); text-shadow: 0 0 10px var(--b-color); }
+
+.card-icon { font-size: 28px; margin-bottom: 4px; }
+.card-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.card-desc { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+.card-cost-tag {
+  display: inline-block; margin-top: 6px;
+  background: var(--surface2); border-radius: 4px;
+  padding: 2px 6px; font-size: 10px;
+  font-family: 'Orbitron', monospace; color: var(--text-dim);
+}
+.card-count-badge {
+  position: absolute; bottom: 8px; right: 10px;
+  background: var(--accent3); color: var(--bg);
+  border-radius: 50%; width: 22px; height: 22px;
+  align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900; font-family: 'Orbitron', monospace;
+  display: none;
+}
+.card-item.selected .card-count-badge,
+.card-item.selected-S .card-count-badge,
+.card-item.selected-A .card-count-badge,
+.card-item.selected-B .card-count-badge { display: flex; }
+
+.deck-btn-area {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(0deg, var(--bg) 60%, transparent);
+  padding: 20px; display: flex; flex-direction: column;
+  align-items: center; gap: 10px; z-index: 20;
+}
+.deck-info-text { font-size: 12px; color: var(--text-dim); font-family: 'Orbitron', monospace; }
+
+/* ===== MATCHMAKING ===== */
+#screen-match { gap: 20px; }
+.match-status {
+  font-family: 'Orbitron', monospace; font-size: 14px;
+  color: var(--text-dim); letter-spacing: 2px; text-align: center;
+}
+.match-spinner {
+  width: 80px; height: 80px; position: relative;
+}
+.match-spinner::before, .match-spinner::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: 50%; border: 3px solid transparent;
+}
+.match-spinner::before {
+  border-top-color: var(--accent);
+  animation: spin 1s linear infinite;
+}
+.match-spinner::after {
+  border-bottom-color: var(--accent2);
+  animation: spin 1.5s linear infinite reverse;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.match-found {
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  border-radius: 20px; padding: 24px;
+  text-align: center; width: 100%; max-width: 320px;
+  box-shadow: 0 0 40px rgba(0,245,255,0.2);
+  animation: slideUp 0.4s ease;
+}
+@keyframes slideUp { from { opacity:0; transform:translateY(20px); } }
+.match-vs { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+.match-opponent {
+  font-family: 'Orbitron', monospace; font-size: 22px;
+  color: var(--accent3); font-weight: 700;
+  margin-bottom: 6px;
+}
+.match-waiting { font-size: 12px; color: var(--text-dim); }
+
+/* ===== BATTLE SCREEN ===== */
+#screen-battle {
+  justify-content: flex-start;
+  padding: 0;
+  overflow: hidden;
+}
+.battle-wrap {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+
+/* HP bars */
+.battle-top {
+  background: linear-gradient(180deg, rgba(5,5,15,0.95), rgba(5,5,15,0.7));
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.hp-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+}
+.hp-name {
+  font-family: 'Orbitron', monospace; font-size: 11px;
+  font-weight: 700; letter-spacing: 1px; min-width: 70px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hp-bar-wrap {
+  flex: 1; height: 14px; background: var(--surface2);
+  border-radius: 7px; overflow: hidden; position: relative;
+  border: 1px solid var(--border);
+}
+.hp-bar-fill {
+  height: 100%; border-radius: 7px;
+  transition: width 0.5s ease;
+  position: relative;
+}
+.hp-bar-fill::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 60%);
+  border-radius: 7px;
+}
+.hp-fill-player { background: linear-gradient(90deg, #00ff88, #00b4ff); }
+.hp-fill-enemy { background: linear-gradient(90deg, #ff006e, #ff8c00); }
+.hp-val {
+  font-family: 'Orbitron', monospace; font-size: 11px;
+  min-width: 36px; text-align: right; color: var(--text-dim);
+}
+.turn-badge {
+  text-align: center;
+  font-family: 'Orbitron', monospace; font-size: 10px;
+  color: var(--accent); letter-spacing: 2px;
+}
+
+/* Battle arena */
+.battle-arena {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  min-height: 0;
+}
+.arena-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0,245,255,0.04) 0%, transparent 70%);
+}
+.vs-display {
+  position: absolute; font-family: 'Orbitron', monospace;
+  font-size: 80px; font-weight: 900; opacity: 0.04;
+  color: var(--accent); pointer-events: none; letter-spacing: 10px;
+}
+
+/* Hand display - vertical, centered */
+.hand-display {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center;
+  gap: 4px; width: 100%; flex: 1;
+  padding: 4px 0;
+}
+.hand-row {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%;
+}
+.hand-box {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+}
+.hand-emoji {
+  font-size: 72px; line-height: 1;
+  filter: drop-shadow(0 0 16px rgba(255,255,255,0.25));
+  transition: filter 0.4s;
+  display: block; text-align: center;
+}
+.hand-emoji.reveal-anim {
+  animation: handReveal 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes handReveal {
+  0%   { transform: scale(0) rotate(-25deg); opacity: 0; }
+  65%  { transform: scale(1.25) rotate(4deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0);       opacity: 1; }
+}
+.hand-name-badge {
+  font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700;
+  max-width: 100px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; text-align: center;
+}
+.hand-name-badge.player-badge { color: var(--accent); }
+.hand-name-badge.enemy-badge  { color: var(--accent2); }
+.hand-vs-divider {
+  display: flex; align-items: center; width: 70%; gap: 8px;
+  padding: 2px 0;
+}
+.hand-vs-divider::before, .hand-vs-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: var(--border); opacity: 0.4;
+}
+.hand-vs-text {
+  font-family: 'Orbitron', monospace; font-size: 15px; font-weight: 900;
+  color: var(--border); letter-spacing: 3px;
+}
+
+/* Win/lose highlight */
+.hand-emoji.winner { filter: drop-shadow(0 0 22px #ffd600) drop-shadow(0 0 44px #ffd600); }
+.hand-emoji.loser  { filter: drop-shadow(0 0 8px #ff006e) brightness(0.45); }
+
+/* RPS label tag */
+.rps-name-tag {
+  font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 900;
+  padding: 4px 14px; border-radius: 8px; letter-spacing: 1px;
+  opacity: 0; transition: opacity 0.3s; text-align: center;
+}
+.rps-name-tag.show { opacity: 1; }
+.rps-tag-player { background: rgba(0,245,255,0.15); color: var(--accent);  border: 1px solid var(--accent); }
+.rps-tag-enemy  { background: rgba(255,0,110,0.15);  color: var(--accent2); border: 1px solid var(--accent2); }
+
+/* Card zone */
+.card-zone {
+  display: flex; gap: 6px; padding: 4px 12px;
+  overflow-x: auto; align-items: center;
+  justify-content: center; min-height: 56px;
+  scrollbar-width: none;
+}
+.card-zone::-webkit-scrollbar { display: none; }
+.battle-card {
+  flex-shrink: 0;
+  width: 64px; border-radius: 10px;
+  padding: 8px 6px;
+  text-align: center; position: relative;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  transition: all 0.3s;
+}
+.battle-card.played { border-color: var(--accent3); }
+.battle-card .bc-icon { font-size: 22px; }
+.battle-card .bc-name { font-size: 9px; color: var(--text-dim); margin-top: 2px; line-height: 1.2; }
+.battle-card .bc-rank {
+  position: absolute; top: 3px; right: 4px;
+  font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 900;
+}
+
+/* ===== HAND SELECT ===== */
+.hand-select-area {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: rgba(5,5,15,0.9);
+  flex-shrink: 0;
+  transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease, padding 0.4s ease;
+  overflow: hidden;
+  max-height: 400px;
+  opacity: 1;
+}
+.hand-select-area.hidden-select {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-top-color: transparent;
+  pointer-events: none;
+}
+.hand-select-label {
+  font-family: 'Orbitron', monospace; font-size: 10px;
+  color: var(--text-dim); letter-spacing: 2px; margin-bottom: 8px;
+  text-align: center;
+}
+.rps-btns {
+  display: flex; gap: 10px; justify-content: center;
+  margin-bottom: 10px;
+}
+.rps-btn {
+  width: 72px; height: 72px;
+  background: var(--surface2); border: 2px solid var(--border);
+  border-radius: 16px; font-size: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.rps-btn.selected {
+  border-color: var(--accent3);
+  background: rgba(255,214,0,0.1);
+  box-shadow: 0 0 20px rgba(255,214,0,0.3);
+  transform: scale(1.08);
+}
+.rps-btn:active { transform: scale(0.95); }
+
+/* ===== HAND CARD SELECT ===== */
+.battle-hand-cards {
+  display: flex; gap: 8px; overflow-x: auto;
+  padding: 4px 0 8px; scrollbar-width: none;
+}
+.battle-hand-cards::-webkit-scrollbar { display: none; }
+.bh-card {
+  flex-shrink: 0; width: 78px; border-radius: 12px;
+  padding: 10px 6px 8px; text-align: center;
+  border: 2px solid var(--border);
+  background: var(--surface); cursor: pointer;
+  transition: all 0.2s; position: relative;
+}
+.bh-card.selected {
+  border-color: var(--accent3);
+  background: rgba(255,214,0,0.08);
+  box-shadow: 0 0 18px rgba(255,214,0,0.4);
+}
+.bh-card.disabled { opacity: 0.4; pointer-events: none; }
+.bh-card:active { transform: scale(0.95); }
+.bh-card .bh-icon { font-size: 26px; }
+.bh-card .bh-name {
+  font-size: 10px; color: var(--text); margin-top: 4px;
+  line-height: 1.2; font-weight: 700;
+}
+.bh-card .bh-desc {
+  font-size: 9px; color: var(--text-dim); margin-top: 3px; line-height: 1.3;
+}
+.bh-card .bh-rank {
+  position: absolute; top: 3px; right: 5px;
+  font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 900;
+}
+.bh-card .bh-sel-num {
+  position: absolute; top: 3px; left: 5px;
+  background: var(--accent3); color: var(--bg);
+  border-radius: 50%; width: 16px; height: 16px;
+  font-size: 10px; display: none; align-items: center; justify-content: center;
+  font-weight: 900; font-family: 'Orbitron', monospace;
+}
+.bh-card.selected .bh-sel-num { display: flex; }
+
+/* NEW draw badge */
+.bh-new-badge {
+  position: absolute; bottom: 3px; right: 3px;
+  background: linear-gradient(135deg, #ff006e, #ff8c00);
+  color: white; border-radius: 4px;
+  padding: 1px 5px; font-size: 8px;
+  font-family: 'Orbitron', monospace; font-weight: 900;
+  letter-spacing: 0.5px;
+  animation: newPulse 1s ease-in-out 3;
+}
+@keyframes newPulse {
+  0%,100% { opacity:1; } 50% { opacity:0.5; }
+}
+.bh-card-new {
+  border-color: rgba(255,0,110,0.6) !important;
+  box-shadow: 0 0 12px rgba(255,0,110,0.25);
+}
+
+/* ===== CARD DETAIL POPUP ===== */
+.card-detail-popup {
+  position: fixed; z-index: 90;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(5,5,15,0.97);
+  border-top: 2px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  padding: 18px 20px 28px;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: all;
+}
+.card-detail-popup.show { transform: translateY(0); }
+.cdp-header {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 12px;
+}
+.cdp-icon { font-size: 44px; line-height: 1; }
+.cdp-title-area { flex: 1; }
+.cdp-name {
+  font-size: 18px; font-weight: 900; color: var(--text); margin-bottom: 2px;
+}
+.cdp-rank-cost {
+  display: flex; gap: 8px; align-items: center;
+}
+.cdp-rank {
+  font-family: 'Orbitron', monospace; font-weight: 900; font-size: 16px;
+}
+.cdp-cost {
+  font-family: 'Orbitron', monospace; font-size: 11px;
+  color: var(--text-dim); background: var(--surface2);
+  border-radius: 4px; padding: 2px 7px;
+}
+.cdp-desc {
+  background: var(--surface2); border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 12px;
+  font-size: 13px; color: var(--text); font-weight: 700;
+  border-left: 3px solid var(--accent3);
+}
+.cdp-detail {
+  font-size: 12px; color: var(--text-dim); line-height: 1.6;
+  margin-bottom: 14px;
+}
+.cdp-btns {
+  display: flex; gap: 10px;
+}
+.cdp-close {
+  flex: 1; padding: 12px; border-radius: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-dim); font-family: 'Orbitron', monospace;
+  font-size: 12px; cursor: pointer; letter-spacing: 1px;
+}
+.cdp-select {
+  flex: 2; padding: 12px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent3), #ff8c00);
+  border: none; color: #1a0800;
+  font-family: 'Orbitron', monospace; font-weight: 900;
+  font-size: 13px; cursor: pointer; letter-spacing: 1px;
+}
+.cdp-deselect {
+  flex: 2; padding: 12px; border-radius: 10px;
+  background: linear-gradient(135deg, #ff006e, #cc0055);
+  border: none; color: white;
+  font-family: 'Orbitron', monospace; font-weight: 900;
+  font-size: 13px; cursor: pointer; letter-spacing: 1px;
+}
+.cdp-overlay {
+  position: fixed; inset: 0; z-index: 89;
+  background: rgba(0,0,0,0.5); opacity: 0;
+  pointer-events: none; transition: opacity 0.3s;
+}
+.cdp-overlay.show { opacity: 1; pointer-events: all; }
+
+.confirm-btn-area {
+  padding-top: 8px; text-align: center;
+}
+
+/* ===== CARD ACTIVATION OVERLAY ===== */
+#resolution-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(2,2,12,0.88);
+  pointer-events: none;
+  backdrop-filter: blur(2px);
+}
+
+/* Big single-card spotlight reveal */
+.card-spotlight {
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: all;
+  animation: spotlightIn 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  position: relative;
+}
+@keyframes spotlightIn {
+  0%   { opacity:0; transform: scale(0.3) rotate(-12deg); }
+  60%  { opacity:1; transform: scale(1.08) rotate(2deg); }
+  100% { opacity:1; transform: scale(1) rotate(0deg); }
+}
+.card-spotlight-glow {
+  position: absolute; inset: -30px;
+  border-radius: 50%; pointer-events: none;
+  animation: glowPulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes glowPulse {
+  from { opacity: 0.4; transform: scale(0.9); }
+  to   { opacity: 1;   transform: scale(1.1); }
+}
+.card-spotlight-body {
+  width: 180px; border-radius: 20px;
+  padding: 20px 16px 16px;
+  text-align: center; position: relative;
+  border: 3px solid transparent;
+  background: var(--surface);
+}
+.card-spotlight-body.rank-glow-S {
+  border-color: var(--s-color);
+  box-shadow: 0 0 40px rgba(255,0,110,0.7), 0 0 80px rgba(255,0,110,0.3), inset 0 0 20px rgba(255,0,110,0.1);
+}
+.card-spotlight-body.rank-glow-A {
+  border-color: var(--a-color);
+  box-shadow: 0 0 40px rgba(255,140,0,0.7), 0 0 80px rgba(255,140,0,0.3), inset 0 0 20px rgba(255,140,0,0.1);
+}
+.card-spotlight-body.rank-glow-B {
+  border-color: var(--b-color);
+  box-shadow: 0 0 40px rgba(0,180,255,0.7), 0 0 80px rgba(0,180,255,0.3), inset 0 0 20px rgba(0,180,255,0.1);
+}
+.cs-rank-badge {
+  position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+  font-family: 'Orbitron', monospace; font-weight: 900; font-size: 20px;
+  padding: 4px 18px; border-radius: 20px;
+}
+.cs-rank-badge.rank-S { background: var(--s-color); color: white; box-shadow: 0 0 20px var(--s-color); }
+.cs-rank-badge.rank-A { background: var(--a-color); color: white; box-shadow: 0 0 20px var(--a-color); }
+.cs-rank-badge.rank-B { background: var(--b-color); color: white; box-shadow: 0 0 20px var(--b-color); }
+.cs-icon { font-size: 56px; line-height: 1; margin: 8px 0 10px; }
+.cs-name { font-size: 16px; font-weight: 900; color: var(--text); margin-bottom: 6px; }
+.cs-owner {
+  font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+.cs-owner.player-side { color: var(--accent); }
+.cs-owner.enemy-side  { color: var(--accent2); }
+.cs-effect-box {
+  background: var(--surface2); border-radius: 10px; padding: 10px 12px;
+  font-size: 12px; color: var(--text); font-weight: 700;
+  border-left: 3px solid var(--accent3); text-align: left;
+  margin-bottom: 10px;
+}
+.cs-detail { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+
+/* Particle burst */
+.particle {
+  position: fixed; z-index: 75; border-radius: 50%;
+  pointer-events: none; width: 8px; height: 8px;
+  animation: particleFly 0.8s ease-out forwards;
+}
+@keyframes particleFly {
+  0%   { opacity:1; transform: translate(0,0) scale(1); }
+  100% { opacity:0; transform: translate(var(--tx), var(--ty)) scale(0.2); }
+}
+
+/* Next / activate button strip */
+.cs-btn-strip {
+  display: flex; gap: 12px; margin-top: 18px;
+  pointer-events: all;
+}
+.cs-counter {
+  font-family: 'Orbitron', monospace; font-size: 11px;
+  color: var(--text-dim); text-align: center; margin-top: 8px;
+  letter-spacing: 1px;
+}
+
+/* Effect toast (floats up from card) */
+.effect-toast {
+  position: fixed; z-index: 76; pointer-events: none;
+  font-family: 'Orbitron', monospace; font-weight: 900;
+  font-size: 22px; text-align: center;
+  animation: toastRise 1.2s ease forwards;
+  text-shadow: 0 0 20px currentColor;
+  white-space: nowrap;
+}
+@keyframes toastRise {
+  0%   { opacity:1; transform: translateY(0) scale(0.7); }
+  30%  { opacity:1; transform: translateY(-30px) scale(1.1); }
+  100% { opacity:0; transform: translateY(-90px) scale(0.9); }
+}
+
+.card-reveal-panel { display: none; }  /* legacy, hidden */
+
+/* ===== BATTLE RESULT ===== */
+#battle-result {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(5,5,15,0.9);
+  pointer-events: none; opacity: 0;
+  transition: opacity 0.5s;
+}
+#battle-result.show { opacity: 1; pointer-events: all; }
+.result-text {
+  font-family: 'Orbitron', monospace; font-size: 48px; font-weight: 900;
+  margin-bottom: 20px;
+  animation: resultBounce 0.6s ease;
+}
+@keyframes resultBounce {
+  0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(3deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.result-win { color: var(--accent3); text-shadow: 0 0 40px rgba(255,214,0,0.8); }
+.result-lose { color: var(--accent2); text-shadow: 0 0 40px rgba(255,0,110,0.8); }
+.result-draw { color: var(--accent); text-shadow: 0 0 40px rgba(0,245,255,0.8); }
+
+/* ===== ROUND RESULT ===== */
+.round-result-popup {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  z-index: 55; pointer-events: none;
+  font-family: 'Orbitron', monospace; font-weight: 900;
+  text-align: center; opacity: 0;
+}
+.round-result-popup.show {
+  animation: popResult 1.5s ease forwards;
+}
+@keyframes popResult {
+  0% { opacity: 0; transform: translate(-50%,-50%) scale(0.5); }
+  20% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
+  60% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%,-60%) scale(0.9); }
+}
+.rr-main { font-size: 36px; }
+.rr-damage { font-size: 20px; margin-top: 4px; }
+
+/* ===== DAMAGE NUMBERS ===== */
+.dmg-number {
+  position: fixed; z-index: 70;
+  font-family: 'Orbitron', monospace; font-weight: 900;
+  pointer-events: none; opacity: 0;
+}
+.dmg-number.show {
+  animation: dmgFloat 1.5s ease forwards;
+}
+@keyframes dmgFloat {
+  0% { opacity: 1; transform: translateY(0) scale(0.8); }
+  30% { opacity: 1; transform: translateY(-20px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+}
+
+/* ===== FLASH ===== */
+.screen-flash {
+  position: fixed; inset: 0; z-index: 80;
+  pointer-events: none; opacity: 0;
+}
+.screen-flash.flash-red {
+  background: rgba(255,0,110,0.4);
+  animation: flashAnim 0.4s ease forwards;
+}
+.screen-flash.flash-blue {
+  background: rgba(0,245,255,0.3);
+  animation: flashAnim 0.4s ease forwards;
+}
+@keyframes flashAnim {
+  0% { opacity: 1; } 100% { opacity: 0; }
+}
+
+/* ===== STATUS MSG ===== */
+.status-msg {
+  text-align: center; font-size: 13px; color: var(--text-dim);
+  padding: 6px; font-family: 'Orbitron', monospace; letter-spacing: 1px;
+  min-height: 32px;
+}
+
+/* ===== WAITING INDICATOR ===== */
+.waiting-dots {
+  display: inline-block;
+}
+.waiting-dots::after {
+  content: '...';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+@keyframes dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- TITLE -->
+<div id="screen-title" class="screen">
+  <div class="title-logo">JANKEN<br>CLASH</div>
+  <div class="title-sub">CARD BATTLE</div>
+  <div class="title-rps">
+    <span>✊</span><span>✋</span><span>✌️</span>
+  </div>
+  <button class="btn btn-gold" onclick="Audio.bgm('title'); startFromTitle()">START GAME</button>
+</div>
+
+<!-- NAME -->
+<div id="screen-name" class="screen hidden">
+  <div class="screen-title">ENTER YOUR NAME</div>
+  <div class="screen-subtitle">プレイヤー名を入力してください</div>
+  <input class="input-field" id="name-input" type="text" placeholder="Name" maxlength="12" autocomplete="off">
+  <button class="btn btn-primary" onclick="saveName()">CONFIRM</button>
+</div>
+
+<!-- DECK -->
+<div id="screen-deck" class="screen hidden">
+  <div class="screen-title" style="margin-bottom:8px;">DECK BUILD</div>
+  <div class="deck-header" id="deck-header">
+    <div class="deck-cost-display">COST: <span id="deck-cost-val">0</span> / 200</div>
+    <div class="deck-cost-display">CARDS: <span id="deck-count-val">0</span> / 16</div>
+  </div>
+  <div class="deck-cost-bar"><div class="deck-cost-fill" id="deck-cost-bar" style="width:0%"></div></div>
+  <!-- Rank Tabs -->
+  <div class="rank-tabs" id="rank-tabs">
+    <button class="rank-tab tab-S active" id="tab-S" onclick="switchRankTab('S')">
+      S<span class="tab-count" id="tab-count-S">0枚</span>
+    </button>
+    <button class="rank-tab tab-A" id="tab-A" onclick="switchRankTab('A')">
+      A<span class="tab-count" id="tab-count-A">0枚</span>
+    </button>
+    <button class="rank-tab tab-B" id="tab-B" onclick="switchRankTab('B')">
+      B<span class="tab-count" id="tab-count-B">0枚</span>
+    </button>
+  </div>
+  <div class="card-grid" id="card-grid"></div>
+  <div class="deck-btn-area">
+    <div class="deck-info-text" id="deck-info-text">カードを選んでデッキを編成してください（16枚必須）</div>
+    <button class="btn btn-sm" style="margin-bottom:8px;background:linear-gradient(135deg,rgba(255,214,0,0.15),rgba(255,140,0,0.15));border-color:var(--accent3);color:var(--accent3);letter-spacing:1px;" onclick="randomDeck()">🎲 RANDOM</button>
+    <button class="btn btn-primary" id="deck-done-btn" onclick="finishDeck()" style="display:none">READY</button>
+  </div>
+</div>
+
+<!-- MATCH -->
+<div id="screen-match" class="screen hidden">
+  <div class="screen-title">MATCHMAKING</div>
+  <div id="match-content">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+      <div class="match-spinner"></div>
+      <div class="match-status">対戦相手を探しています<span class="waiting-dots"></span></div>
+      <button class="btn btn-sm" onclick="cancelMatch()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- BATTLE -->
+<div id="screen-battle" class="screen hidden">
+  <div class="battle-wrap">
+    <!-- TOP: HP -->
+    <div class="battle-top">
+      <div class="hp-row">
+        <div class="hp-name" id="enemy-name-display">ENEMY</div>
+        <div class="hp-bar-wrap">
+          <div class="hp-bar-fill hp-fill-enemy" id="enemy-hp-bar" style="width:100%"></div>
+        </div>
+        <div class="hp-val" id="enemy-hp-val">100</div>
+      </div>
+      <div class="hp-row">
+        <div class="hp-name" id="player-name-display">YOU</div>
+        <div class="hp-bar-wrap">
+          <div class="hp-bar-fill hp-fill-player" id="player-hp-bar" style="width:100%"></div>
+        </div>
+        <div class="hp-val" id="player-hp-val">100</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="turn-badge" id="turn-badge">TURN 1</div>
+        <div id="sound-controls" style="display:flex;gap:6px;"></div>
+      </div>
+    </div>
+
+    <!-- ARENA -->
+    <div class="battle-arena">
+      <div class="arena-bg"></div>
+      <div class="vs-display">VS</div>
+      <!-- Enemy card zone -->
+      <div style="font-family:Orbitron,monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;padding:2px 16px 0;" id="enemy-cards-label">ENEMY CARDS</div>
+      <div class="card-zone" id="enemy-card-zone"></div>
+
+      <!-- Hand: centered vertical layout -->
+      <div class="hand-display">
+        <!-- Enemy row -->
+        <div class="hand-row">
+          <div class="hand-box">
+            <div class="hand-name-badge enemy-badge" id="enemy-hand-name">ENEMY</div>
+            <div class="hand-emoji" id="enemy-hand-emoji">❓</div>
+            <div class="rps-name-tag rps-tag-enemy" id="enemy-rps-tag"></div>
+          </div>
+        </div>
+        <!-- VS divider -->
+        <div class="hand-vs-divider"><span class="hand-vs-text">VS</span></div>
+        <!-- Player row -->
+        <div class="hand-row">
+          <div class="hand-box">
+            <div class="hand-name-badge player-badge" id="player-hand-name">YOU</div>
+            <div class="hand-emoji" id="player-hand-emoji">❓</div>
+            <div class="rps-name-tag rps-tag-player" id="player-rps-tag"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Player card zone -->
+      <div style="font-family:Orbitron,monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;padding:0 16px 2px;" id="player-cards-label">YOUR CARDS</div>
+      <div class="card-zone" id="player-card-zone"></div>
+
+      <!-- Arena status (shown while select area is hidden) -->
+      <div id="arena-status" style="
+        font-family:'Orbitron',monospace; font-size:12px; letter-spacing:2px;
+        color:var(--accent); text-align:center; padding:6px 16px;
+        opacity:0; transition:opacity 0.3s; pointer-events:none;
+        min-height:28px;
+      "></div>
+    </div>
+
+    <!-- BOTTOM: SELECT -->
+    <div class="hand-select-area" id="hand-select-area">
+      <div class="hand-select-label">SELECT YOUR MOVE</div>
+      <div class="rps-btns">
+        <div class="rps-btn" id="rps-guu" onclick="selectHand('guu')">✊</div>
+        <div class="rps-btn" id="rps-paa" onclick="selectHand('paa')">✋</div>
+        <div class="rps-btn" id="rps-choki" onclick="selectHand('choki')">✌️</div>
+      </div>
+      <div class="hand-select-label">USE CARDS (MAX 3) &nbsp;<span id="hand-count-badge" style="font-size:10px;letter-spacing:1px;">手札 0/10</span></div>
+      <div class="battle-hand-cards" id="battle-hand-cards"></div>
+      <div class="confirm-btn-area">
+        <div class="status-msg" id="battle-status-msg"></div>
+        <button class="btn btn-primary" id="battle-confirm-btn" onclick="confirmAction()" style="display:none;max-width:240px;">CONFIRM</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CARD ACTIVATION OVERLAY (new spotlight system) -->
+<div id="resolution-overlay" style="display:none;">
+  <div id="card-spotlight-wrap"></div>
+  <div class="cs-counter" id="cs-counter"></div>
+  <div class="cs-btn-strip">
+    <button class="btn btn-sm" id="next-card-btn" onclick="nextCardReveal()">ACTIVATE ▶</button>
+  </div>
+</div>
+
+<!-- legacy panel hidden -->
+<div class="card-reveal-panel" id="card-reveal-panel" style="display:none;">
+  <div class="reveal-cards" id="reveal-cards-content"></div>
+</div>
+
+<!-- ROUND RESULT POPUP -->
+<div class="round-result-popup" id="round-result-popup">
+  <div class="rr-main" id="rr-main"></div>
+  <div class="rr-damage" id="rr-damage"></div>
+</div>
+
+<!-- BATTLE RESULT -->
+<div id="battle-result">
+  <div class="result-text" id="result-text"></div>
+  <div style="font-family:Orbitron,monospace;font-size:14px;color:var(--text-dim);margin-bottom:30px;" id="result-sub"></div>
+  <button class="btn btn-primary" onclick="backToTitle()">BACK TO TITLE</button>
+</div>
+
+<!-- FLASH -->
+<div class="screen-flash" id="screen-flash"></div>
+
+<!-- CARD DETAIL POPUP -->
+<div class="cdp-overlay" id="cdp-overlay" onclick="closeCardDetail()"></div>
+<div class="card-detail-popup" id="card-detail-popup">
+  <div class="cdp-header">
+    <div class="cdp-icon" id="cdp-icon">🃏</div>
+    <div class="cdp-title-area">
+      <div class="cdp-name" id="cdp-name">カード名</div>
+      <div class="cdp-rank-cost">
+        <div class="cdp-rank" id="cdp-rank">S</div>
+        <div class="cdp-cost" id="cdp-cost">COST: 20</div>
+      </div>
+    </div>
+  </div>
+  <div class="cdp-desc" id="cdp-desc">効果テキスト</div>
+  <div class="cdp-detail" id="cdp-detail">詳細説明</div>
+  <div class="cdp-btns">
+    <button class="cdp-close" onclick="closeCardDetail()">CLOSE</button>
+    <button class="cdp-select" id="cdp-action-btn" onclick="cdpToggleCard()">USE THIS CARD</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CARD DATABASE
+// ============================================================
+const CARD_DB = [
+  // === S RANK (cost 20) ===
+  { id:'s1', rank:'S', name:'フェニックスオーラ', icon:'🔥', cost:20,
+    desc:'HP30回復 + ダメージ+5', detail:'炎の翼が包み込み、傷を癒しつつ闘志を燃やす。HP30回復＆このターンの与ダメ+5。', effect:{heal:30, dmgUp:5} },
+  { id:'s2', rank:'S', name:'鉄壁の盾', icon:'🛡️', cost:20,
+    desc:'次の被ダメを0にする', detail:'完全無敵の盾を展開。このターン、相手からのダメージを完全に0にする鉄壁の守り。', effect:{shield:999} },
+  { id:'s3', rank:'S', name:'運命操作', icon:'🎲', cost:20,
+    desc:'相手の手を「グー」に強制', detail:'相手の意思を歪め、グーしか出せなくする。相手の手を強制的に「グー✊」に変える。', effect:{forceEnemy:'guu'} },
+  { id:'s4', rank:'S', name:'クリティカルブースト', icon:'⚡', cost:20,
+    desc:'ダメージ+20', detail:'全力を解放した一撃。このターンの与えるダメージを+20する最大火力カード。', effect:{dmgUp:20} },
+  { id:'s5', rank:'S', name:'命運の掌握', icon:'✋', cost:20,
+    desc:'相手の手を「パー」に強制', detail:'相手の手首を掌握し、パーしか出せなくする。相手の手を強制的に「パー✋」に変える。', effect:{forceEnemy:'paa'} },
+  { id:'s6', rank:'S', name:'剪断の刃', icon:'✌️', cost:20,
+    desc:'相手の手を「チョキ」に強制', detail:'精神に割り込み、チョキしか出せなくする。相手の手を強制的に「チョキ✌️」に変える。', effect:{forceEnemy:'choki'} },
+  { id:'s7', rank:'S', name:'ライフスティール', icon:'💀', cost:20,
+    desc:'相手HP-15、自HP+15', detail:'闇の力で相手の生命力を奪い取る。相手のHPを15吸収し自分のHPに変換する。', effect:{drain:15} },
+  { id:'s8', rank:'S', name:'完全回復', icon:'✨', cost:20,
+    desc:'HPを50回復', detail:'奇跡の光に包まれる。HPを50回復する最強の回復カード。瀕死からの逆転も可能。', effect:{heal:50} },
+  { id:'s9', rank:'S', name:'ヴォルケイノブレイク', icon:'🌋', cost:20,
+    desc:'ダメージ+15 + 被ダメ-5', detail:'火山の爆発力で攻防を制す。与ダメ+15と被ダメ-5を同時に発動する攻守一体の必殺カード。', effect:{dmgUp:15, dmgReduce:5} },
+  { id:'s10', rank:'S', name:'タイムリープ', icon:'⏳', cost:20,
+    desc:'HP20回復 + 被ダメ0', detail:'時を巻き戻し、あらゆる攻撃を無効化。HP20回復と完全シールドの両方を得る超レアカード。', effect:{heal:20, shield:999} },
+
+  // === A RANK (cost 10) ===
+  { id:'a1', rank:'A', name:'ヒールウェーブ', icon:'💚', cost:10,
+    desc:'HP20回復', detail:'緑の波動が全身を包み込む。HPを20回復する安定した回復カード。', effect:{heal:20} },
+  { id:'a2', rank:'A', name:'バリアフィールド', icon:'🔷', cost:10,
+    desc:'被ダメージ-8', detail:'青い障壁を展開し攻撃を弾く。このターンの被ダメージを8軽減する防御カード。', effect:{dmgReduce:8} },
+  { id:'a3', rank:'A', name:'パワーアップ', icon:'💪', cost:10,
+    desc:'ダメージ+10', detail:'筋肉が爆発的に膨張する。このターンの与えるダメージを10増加させる攻撃強化カード。', effect:{dmgUp:10} },
+  { id:'a4', rank:'A', name:'ドレイン', icon:'🌑', cost:10,
+    desc:'相手HP-5、自HP+5', detail:'影の蔦が相手の活力を吸い取る。相手のHPを5奪い自分のHPに加算する吸収カード。', effect:{drain:5} },
+  { id:'a5', rank:'A', name:'サンダーランス', icon:'🗲', cost:10,
+    desc:'ダメージ+12', detail:'雷の槍で相手を貫く。このターンの与えるダメージを12増加させる雷撃カード。', effect:{dmgUp:12} },
+  { id:'a6', rank:'A', name:'アイスシールド', icon:'🧊', cost:10,
+    desc:'被ダメージ-10', detail:'氷の鎧が全身を覆う。このターンの被ダメージを10軽減する強力防御カード。', effect:{dmgReduce:10} },
+  { id:'a7', rank:'A', name:'リジェネレーション', icon:'🌿', cost:10,
+    desc:'HP15回復 + 被ダメ-3', detail:'自然の力で再生する。HP15回復と被ダメ-3の両効果を持つバランス型回復カード。', effect:{heal:15, dmgReduce:3} },
+  { id:'a8', rank:'A', name:'フレイムブースト', icon:'🔴', cost:10,
+    desc:'ダメージ+8 + HP5回復', detail:'炎のエネルギーを攻撃に乗せる。与ダメ+8と同時にHP5回復も得られる複合カード。', effect:{dmgUp:8, heal:5} },
+  { id:'a9', rank:'A', name:'ソウルドレイン', icon:'👻', cost:10,
+    desc:'相手HP-8、自HP+8', detail:'幽霊の手が相手の魂を掴む。相手のHPを8吸収して自分のHPに加算する強力な吸収技。', effect:{drain:8} },
+  { id:'a10', rank:'A', name:'サクリファイス', icon:'💔', cost:10,
+    desc:'自HP-5、ダメージ+18', detail:'己の血を代償に力を爆発させる。自分のHPを5犠牲にし与ダメを18増加させるリスク型大火力カード。', effect:{selfDmg:5, dmgUp:18} },
+  { id:'a11', rank:'A', name:'マジックアーマー', icon:'🔮', cost:10,
+    desc:'被ダメージ-6 + HP8回復', detail:'魔力の鎧が攻撃を吸収し活力に変える。被ダメ-6とHP8回復の守りに特化した複合カード。', effect:{dmgReduce:6, heal:8} },
+  { id:'a12', rank:'A', name:'連撃モード', icon:'⚔️', cost:10,
+    desc:'ダメージ+7、あいこでも+5追加', detail:'連続攻撃体制に入る。勝利時の与ダメ+7。さらにあいこ時も追加ダメ+5を与える攻撃特化カード。', effect:{dmgUp:7, drawDmg:5} },
+
+  // === B RANK (cost 5) ===
+  { id:'b1', rank:'B', name:'ポーション', icon:'🧪', cost:5,
+    desc:'HP10回復', detail:'基本的な回復薬。HPを10回復するシンプルだが使いやすいカード。', effect:{heal:10} },
+  { id:'b2', rank:'B', name:'ガード', icon:'🤚', cost:5,
+    desc:'被ダメージ-4', detail:'腕を構えて防御する。このターンの被ダメージを4軽減する基本防御カード。', effect:{dmgReduce:4} },
+  { id:'b3', rank:'B', name:'鋭刃', icon:'🗡️', cost:5,
+    desc:'ダメージ+5', detail:'刃を研ぎ澄ます。このターンの与えるダメージを5増加させる基本攻撃カード。', effect:{dmgUp:5} },
+  { id:'b4', rank:'B', name:'プチヒール', icon:'💊', cost:5,
+    desc:'HP5回復', detail:'小さな回復薬。HPを5回復する軽量カード。デッキのコスト調整に便利。', effect:{heal:5} },
+  { id:'b5', rank:'B', name:'マインドシフト', icon:'🌀', cost:5,
+    desc:'被ダメージ-3 + HP3回復', detail:'精神を集中させ攻撃を受け流す。被ダメ-3とHP3回復の複合効果を持つコスパ良好カード。', effect:{dmgReduce:3, heal:3} },
+  { id:'b6', rank:'B', name:'オーラ纏い', icon:'🌟', cost:5,
+    desc:'ダメージ+4 + 被ダメ-2', detail:'オーラを纏い攻守を高める。与ダメ+4と被ダメ-2の軽量複合カード。序盤から使いやすい。', effect:{dmgUp:4, dmgReduce:2} },
+  { id:'b7', rank:'B', name:'血の意志', icon:'🩸', cost:5,
+    desc:'自HP-3、ダメージ+9', detail:'己の血で力を引き出す。HP3を犠牲にし与ダメ+9を得るリスクリターン型カード。', effect:{selfDmg:3, dmgUp:9} },
+  { id:'b8', rank:'B', name:'鉄壁ブレス', icon:'🫁', cost:5,
+    desc:'被ダメージ-6', detail:'肺から鉄の息吹を放ち防壁を作る。このターンの被ダメージを6軽減する防御特化カード。', effect:{dmgReduce:6} },
+  { id:'b9', rank:'B', name:'怒り爆発', icon:'😡', cost:5,
+    desc:'ダメージ+7', detail:'怒りのままに力が溢れ出す。このターンの与ダメを7増加。低コストながら高火力。', effect:{dmgUp:7} },
+  { id:'b10', rank:'B', name:'ミニドレイン', icon:'🦇', cost:5,
+    desc:'相手HP-3、自HP+3', detail:'小さな蝙蝠が相手の体力を少し吸い取る。相手のHPを3吸収して自分に加算。', effect:{drain:3} },
+  { id:'b11', rank:'B', name:'回避術', icon:'💨', cost:5,
+    desc:'被ダメージ-5', detail:'風のように身を翻し攻撃を躱す。このターンの被ダメを5軽減するスピード型防御カード。', effect:{dmgReduce:5} },
+  { id:'b12', rank:'B', name:'スナイパーアイ', icon:'🎯', cost:5,
+    desc:'ダメージ+6', detail:'急所を狙い澄ます。このターンの与ダメを6増加させる精密攻撃カード。', effect:{dmgUp:6} },
+  { id:'b13', rank:'B', name:'霊薬', icon:'⚗️', cost:5,
+    desc:'HP8回復', detail:'古代の霊薬でHPを8回復する。ポーションより少し強力な回復カード。', effect:{heal:8} },
+  { id:'b14', rank:'B', name:'精神集中', icon:'🧘', cost:5,
+    desc:'被ダメ-2 + ダメージ+3', detail:'精神を研ぎ澄まし全てを高める。被ダメ-2と与ダメ+3の均衡型複合カード。', effect:{dmgReduce:2, dmgUp:3} },
+  { id:'b15', rank:'B', name:'チャージショット', icon:'💥', cost:5,
+    desc:'ダメージ+5 + HP3回復', detail:'チャージしたエネルギーを放ちつつ自己回復。与ダメ+5とHP3回復の攻撃特化複合カード。', effect:{dmgUp:5, heal:3} },
+  { id:'b16', rank:'B', name:'鋼の意志', icon:'🦾', cost:5,
+    desc:'被ダメ-4 + HP4回復', detail:'折れない意志が肉体を強化する。被ダメ-4とHP4回復の守り重視複合カード。', effect:{dmgReduce:4, heal:4} },
+  { id:'b17', rank:'B', name:'影縫い', icon:'🕷️', cost:5,
+    desc:'相手HP-4、自HP+4', detail:'蜘蛛の糸で相手を縛り生命力を吸い取る。相手のHPを4吸収する小型吸収カード。', effect:{drain:4} },
+  { id:'b18', rank:'B', name:'光の加護', icon:'😇', cost:5,
+    desc:'HP12回復', detail:'天使の加護でHPを大きく回復。コストB帯では最大級のHP12回復カード。', effect:{heal:12} },
+
+  // === NEW S RANK (cost 20) ===
+  { id:'s11', rank:'S', name:'神罰の雷', icon:'⚡', cost:20,
+    desc:'ダメージ+25 / 自HP-10', detail:'神の怒りを解き放つ両刃の剣。自分のHPを10犠牲に相手へのダメージを+25する超破壊カード。', effect:{dmgUp:25, selfDmg:10} },
+  { id:'s12', rank:'S', name:'ブラックホール', icon:'🕳️', cost:20,
+    desc:'相手HP-20 直接ダメ', detail:'重力の渦が相手を飲み込む。じゃんけん結果に関係なく相手に直接20ダメージを与える。', effect:{directDmgEnemy:20} },
+  { id:'s13', rank:'S', name:'ネクロマンサー', icon:'💀', cost:20,
+    desc:'相手HP-10、自HP+20', detail:'死を操り己の糧とする。相手のHPを10奪い、自分のHPを20回復する超吸収カード。', effect:{drain:10, healBonus:10} },
+  { id:'s14', rank:'S', name:'時間停止', icon:'⏱️', cost:20,
+    desc:'このターン被ダメ0 + ダメ+10', detail:'時間を止め攻守完全制圧。完全シールドに加え与ダメ+10も得る究極の攻防カード。', effect:{shield:999, dmgUp:10} },
+  { id:'s15', rank:'S', name:'ミラクルリバース', icon:'🔃', cost:20,
+    desc:'HP40回復 + 被ダメ-10', detail:'奇跡が全てを覆す。HP40回復と被ダメ-10を同時に発動する逆転専用最強回復カード。', effect:{heal:40, dmgReduce:10} },
+  { id:'s16', rank:'S', name:'デスマーク', icon:'☠️', cost:20,
+    desc:'勝利時ダメ+30', detail:'死の刻印を刻み込む。このターン勝利した場合、与えるダメージを+30する一撃必殺カード。', effect:{dmgUp:30} },
+  { id:'s17', rank:'S', name:'聖域展開', icon:'🌈', cost:20,
+    desc:'HP25回復 + 被ダメ0 + ダメ+5', detail:'聖なる結界が全てを守る。HP25回復・完全シールド・与ダメ+5の三重効果を持つ最強守護カード。', effect:{heal:25, shield:999, dmgUp:5} },
+  { id:'s18', rank:'S', name:'スターバースト', icon:'🌠', cost:20,
+    desc:'あいこ時ダメ+20 + 通常ダメ+10', detail:'星が爆発する全方位攻撃。あいこ時に追加ダメ+20、さらに通常与ダメも+10する制圧型カード。', effect:{dmgUp:10, drawDmg:20} },
+  { id:'s19', rank:'S', name:'カオスフィールド', icon:'🌪️', cost:20,
+    desc:'相手の手をランダムに変える', detail:'混沌が相手の意識を乱す。相手の出す手をランダムに書き換える予測不能の妨害カード。', effect:{forceEnemyRandom:true} },
+  { id:'s20', rank:'S', name:'オメガドレイン', icon:'🔮', cost:20,
+    desc:'相手HP-20、自HP+20', detail:'究極の吸収魔法。相手のHPを20奪い自分のHPに変換する最強の吸収カード。', effect:{drain:20} },
+
+  // === NEW A RANK (cost 10) ===
+  { id:'a13', rank:'A', name:'ダブルエッジ', icon:'⚔️', cost:10,
+    desc:'ダメ+14 / 自HP-4', detail:'両刃の剣で全力攻撃。自分のHP4を犠牲に与ダメ+14を得るリスクと火力のバランス型カード。', effect:{dmgUp:14, selfDmg:4} },
+  { id:'a14', rank:'A', name:'エコーヒール', icon:'🫀', cost:10,
+    desc:'HP18回復', detail:'心臓が脈打ちHPを回復。HPを18回復するAランク最高峰の回復カード。', effect:{heal:18} },
+  { id:'a15', rank:'A', name:'ダークシールド', icon:'🌒', cost:10,
+    desc:'被ダメ-12 + 自HP-3', detail:'闇の盾は重く脆い自分を削る。自HP3を犠牲にこのターンの被ダメを12軽減する防御特化カード。', effect:{dmgReduce:12, selfDmg:3} },
+  { id:'a16', rank:'A', name:'アドレナリン', icon:'💉', cost:10,
+    desc:'ダメ+10 + 被ダメ-5', detail:'アドレナリンが全身を駆け巡る。与ダメ+10と被ダメ-5の攻防バランス型Aカード。', effect:{dmgUp:10, dmgReduce:5} },
+  { id:'a17', rank:'A', name:'バンパイアキス', icon:'🧛', cost:10,
+    desc:'相手HP-10、自HP+10', detail:'吸血鬼の口付けで生命力を奪う。相手のHPを10吸収して自分に加算する強力ドレインカード。', effect:{drain:10} },
+  { id:'a18', rank:'A', name:'フォースフィールド', icon:'🛸', cost:10,
+    desc:'被ダメ-15', detail:'異星の力場が全攻撃を弾く。このターンの被ダメを15軽減するAランク最強防御カード。', effect:{dmgReduce:15} },
+  { id:'a19', rank:'A', name:'ゴーストブレイク', icon:'👾', cost:10,
+    desc:'ダメ+11 + HP7回復', detail:'霊体が攻防を同時にこなす。与ダメ+11とHP7回復を同時に得る攻撃寄り複合カード。', effect:{dmgUp:11, heal:7} },
+  { id:'a20', rank:'A', name:'リフレクト', icon:'🔁', cost:10,
+    desc:'被ダメを半分相手に返す', detail:'受けたダメージを跳ね返す。このターン被ったダメージの半分を相手にも与える反射カード。', effect:{reflect:0.5} },
+  { id:'a21', rank:'A', name:'ファイナルスタンド', icon:'🔰', cost:10,
+    desc:'HPが低いほどダメ増加', detail:'追い詰められた時こそ真価を発揮。自分の残りHPが少ないほど与ダメが増加する逆転型カード（最大+20）。', effect:{lowHpBoost:true} },
+  { id:'a22', rank:'A', name:'トリプルドロー', icon:'🃏', cost:10,
+    desc:'次のターン追加で3枚ドロー', detail:'次のターンのドロー枚数を+3増加させる。手札を一気に充実させる戦略型サポートカード。', effect:{extraDraw:3} },
+];
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let playerName = '';
+let playerDeck = []; // array of card ids
+let enemyName = '';
+
+// Battle state
+let battle = {
+  playerHP: 100, enemyHP: 100,
+  turn: 1,
+  playerHand: [], enemyHand: [],   // PERSISTENT hand (持ち越し、最大10枚)
+  selectedHand: null,
+  selectedCards: [],               // 選択中カードキー (id_idx形式)
+  enemySelectedHand: null,
+  enemySelectedCards: [],
+  phase: 'select',
+  playerDmgUp: 0, playerDmgReduce: 0, playerShield: false,
+  enemyDmgUp: 0, enemyDmgReduce: 0, enemyShield: false,
+  playerForced: null, enemyForced: null,
+  playerDrawDmg: 0, enemyDrawDmg: 0,
+  playerDeckRemain: [], enemyDeckRemain: [],
+};
+
+const RPS_EMOJI = { guu:'✊', paa:'✋', choki:'✌️' };
+const RPS_NAME = { guu:'グー', paa:'パー', choki:'チョキ' };
+
+// ============================================================
+// SCREEN NAVIGATION
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById('screen-' + id).classList.remove('hidden');
+  // BGM per screen
+  if (id === 'title' || id === 'deck' || id === 'name') Audio.bgm('title');
+  if (id === 'match') Audio.bgm('match');
+  if (id === 'battle') { Audio.bgm('battle'); buildSoundControls(); }
+}
+
+function startFromTitle() {
+  Audio.sfx('click');
+  if (!localStorage.getItem('janken_name')) {
+    showScreen('name');
+  } else {
+    playerName = localStorage.getItem('janken_name');
+    showScreen('deck');
+    initDeckScreen();
+  }
+}
+
+function saveName() {
+  const v = document.getElementById('name-input').value.trim();
+  if (!v) { alert('名前を入力してください'); return; }
+  playerName = v;
+  localStorage.setItem('janken_name', v);
+  showScreen('deck');
+  initDeckScreen();
+}
+
+function backToTitle() {
+  document.getElementById('battle-result').classList.remove('show');
+  showScreen('title');
+}
+
+// ============================================================
+// DECK BUILDING
+// ============================================================
+let deckSelection = {}; // cardId -> count
+
+function initDeckScreen() {
+  deckSelection = {};
+  currentRankTab = 'S';
+  ['S','A','B'].forEach(r => document.getElementById('tab-'+r).classList.toggle('active', r==='S'));
+  renderCardGrid();
+  updateDeckCostDisplay();
+}
+
+function getCard(id) { return CARD_DB.find(c => c.id === id); }
+
+let currentRankTab = 'S';
+
+function switchRankTab(rank) {
+  currentRankTab = rank;
+  ['S','A','B'].forEach(r => {
+    document.getElementById('tab-' + r).classList.toggle('active', r === rank);
+  });
+  renderCardGrid();
+}
+
+function renderCardGrid() {
+  const grid = document.getElementById('card-grid');
+  grid.innerHTML = '';
+  const cards = CARD_DB.filter(c => c.rank === currentRankTab);
+  cards.forEach(card => {
+    const cnt = deckSelection[card.id] || 0;
+    const sel = cnt > 0;
+    const el = document.createElement('div');
+    el.className = 'card-item' + (sel ? ` selected-${card.rank}` : '');
+    el.id = 'card-item-' + card.id;
+    el.innerHTML = `
+      <span class="card-rank rank-${card.rank}">${card.rank}</span>
+      <div class="card-icon">${card.icon}</div>
+      <div class="card-name">${card.name}</div>
+      <div class="card-desc">${card.desc}</div>
+      <span class="card-cost-tag">COST: ${card.cost}</span>
+      <div class="card-count-badge" id="badge-${card.id}">${cnt || ''}</div>
+    `;
+    el.onclick = () => toggleDeckCard(card.id);
+    let pressTimer;
+    el.addEventListener('touchstart', () => { pressTimer = setTimeout(() => showDeckCardDetail(card.id), 400); });
+    el.addEventListener('touchend', () => clearTimeout(pressTimer));
+    el.addEventListener('touchmove', () => clearTimeout(pressTimer));
+    grid.appendChild(el);
+  });
+  updateTabCounts();
+}
+
+function updateTabCounts() {
+  ['S','A','B'].forEach(rank => {
+    const total = Object.entries(deckSelection)
+      .filter(([id]) => getCard(id)?.rank === rank)
+      .reduce((s,[,c]) => s+c, 0);
+    document.getElementById('tab-count-' + rank).textContent = total ? `${total}枚` : '0枚';
+  });
+}
+
+function getDeckCost() {
+  return Object.entries(deckSelection).reduce((s,[id,c]) => s + getCard(id).cost * c, 0);
+}
+function getDeckCount() {
+  return Object.values(deckSelection).reduce((s,c) => s+c, 0);
+}
+
+function toggleDeckCard(id) {
+  const card = getCard(id);
+  const cnt = deckSelection[id] || 0;
+  const cost = getDeckCost();
+  const count = getDeckCount();
+  if (cnt > 0) {
+    // remove one
+    deckSelection[id] = cnt - 1;
+    if (deckSelection[id] === 0) delete deckSelection[id];
+  } else {
+    // add one
+    if (count >= 16) { showDeckInfo('デッキは16枚までです'); return; }
+    if (cost + card.cost > 200) { showDeckInfo('コストが200を超えます'); return; }
+    deckSelection[id] = (deckSelection[id] || 0) + 1;
+  }
+  updateDeckCostDisplay();
+  // update item (only if visible in current tab)
+  const newCnt = deckSelection[id] || 0;
+  const el = document.getElementById('card-item-' + id);
+  if (el) {
+    el.className = 'card-item' + (newCnt > 0 ? ` selected-${card.rank}` : '');
+    const badge = document.getElementById('badge-' + id);
+    if (badge) badge.textContent = newCnt || '';
+  }
+  updateTabCounts();
+}
+
+function updateDeckCostDisplay() {
+  const cost = getDeckCost();
+  const count = getDeckCount();
+  document.getElementById('deck-cost-val').textContent = cost;
+  document.getElementById('deck-count-val').textContent = count;
+  document.getElementById('deck-cost-bar').style.width = (cost / 200 * 100) + '%';
+
+  const doneBtn = document.getElementById('deck-done-btn');
+  if (count === 16) {
+    doneBtn.style.display = 'block';
+    showDeckInfo('');
+  } else {
+    doneBtn.style.display = 'none';
+    showDeckInfo(count < 16 ? `あと${16 - count}枚カードを追加してください` : 'デッキは16枚までです');
+  }
+}
+
+function showDeckInfo(msg) {
+  document.getElementById('deck-info-text').textContent = msg;
+}
+
+// ランダムに16枚・コスト200以内でデッキ選択
+function randomDeck() {
+  deckSelection = {};
+  const pool = shuffle([...CARD_DB]);
+  let cost = 0;
+  let count = 0;
+  // 最大試行: カードプールを繰り返しながら16枚になるまで追加
+  let tries = 0;
+  while (count < 16 && tries < 500) {
+    tries++;
+    const card = pool[tries % pool.length];
+    // 1種類のカードは最大2枚まで
+    const cur = deckSelection[card.id] || 0;
+    if (cur >= 2) continue;
+    if (cost + card.cost > 200) continue;
+    if (count >= 16) break;
+    deckSelection[card.id] = cur + 1;
+    cost += card.cost;
+    count++;
+  }
+  // もし16枚に足りなければBランク(cost5)で埋める
+  if (count < 16) {
+    const bCards = shuffle(CARD_DB.filter(c => c.rank === 'B'));
+    for (const card of bCards) {
+      while (count < 16 && cost + card.cost <= 200 && (deckSelection[card.id]||0) < 2) {
+        deckSelection[card.id] = (deckSelection[card.id]||0) + 1;
+        cost += card.cost;
+        count++;
+      }
+      if (count >= 16) break;
+    }
+  }
+  Audio.sfx('click');
+  renderCardGrid();
+  updateDeckCostDisplay();
+}
+
+function finishDeck() {
+  // Build deck array
+  playerDeck = [];
+  Object.entries(deckSelection).forEach(([id, cnt]) => {
+    for (let i = 0; i < cnt; i++) playerDeck.push(id);
+  });
+  startMatchmaking();
+}
+
+// ============================================================
+// ONLINE MATCHMAKING  (Firebase Realtime Database)
+// ============================================================
+let myRole = null;      // 'host' or 'guest'
+let roomId = null;
+let roomRef = null;
+let roomListener = null;
+
+function waitForFirebase(cb) {
+  if (window._FB_READY) { cb(); return; }
+  document.addEventListener('firebase-ready', cb, { once: true });
+}
+
+function startMatchmaking() {
+  showScreen('match');
+  setMatchUI('waiting');
+  waitForFirebase(doMatchmaking);
+}
+
+function setMatchUI(state, opponentName) {
+  const el = document.getElementById('match-content');
+  if (state === 'waiting') {
+    el.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+        <div class="match-spinner"></div>
+        <div class="match-status">対戦相手を探しています<span class="waiting-dots"></span></div>
+        <button class="btn btn-sm" onclick="cancelMatch()">CANCEL</button>
+      </div>`;
+  } else if (state === 'found') {
+    Audio.sfx('matchFound');
+    el.innerHTML = `
+      <div class="match-found">
+        <div class="match-vs">OPPONENT FOUND</div>
+        <div class="match-opponent">${opponentName}</div>
+        <div class="match-waiting">バトル開始を待っています...</div>
+      </div>`;
+  } else if (state === 'ready') {
+    el.innerHTML = `
+      <div class="match-found">
+        <div class="match-vs">OPPONENT FOUND</div>
+        <div class="match-opponent">${opponentName}</div>
+        <div class="match-waiting" style="margin-bottom:16px;">バトルを開始しますか？</div>
+        <button class="btn btn-primary" onclick="startBattle()" style="max-width:200px;">BATTLE START!</button>
+      </div>`;
+  }
+}
+
+async function doMatchmaking() {
+  const { db, ref, set, get, onValue, push, remove, update, serverTimestamp } = window._FB;
+
+  // 待機中ルームを検索
+  const lobbyRef = ref(db, 'lobby');
+  const snap = await get(lobbyRef);
+  let foundRoom = null;
+
+  if (snap.exists()) {
+    snap.forEach(child => {
+      const v = child.val();
+      if (!v.guest && v.host && !foundRoom) {
+        foundRoom = { id: child.key, host: v.host };
+      }
+    });
+  }
+
+  if (foundRoom) {
+    // ゲストとして参加
+    myRole = 'guest';
+    roomId  = foundRoom.id;
+    roomRef = ref(db, 'rooms/' + roomId);
+
+    await update(ref(db, 'lobby/' + roomId), {
+      guest: playerName
+    });
+
+    enemyName = foundRoom.host;
+    setMatchUI('found', enemyName);
+
+    // ゲストのデッキをルームに書き込む
+    await set(ref(db, 'rooms/' + roomId + '/guestDeck'), playerDeck);
+
+    // ホストがバトル開始フラグを立てるのを待つ
+    listenRoom(() => setMatchUI('ready', enemyName));
+
+  } else {
+    // ホストとして新ルーム作成
+    myRole = 'host';
+    const newRoomRef = push(ref(db, 'rooms'));
+    roomId  = newRoomRef.key;
+    roomRef = ref(db, 'rooms/' + roomId);
+
+    await set(roomRef, {
+      host: playerName,
+      hostDeck: playerDeck,
+      status: 'waiting',
+      createdAt: serverTimestamp()
+    });
+
+    await set(ref(db, 'lobby/' + roomId), {
+      host: playerName,
+      createdAt: serverTimestamp()
+    });
+
+    // ゲストが来たら通知
+    listenRoom((data) => {
+      if (data.guestDeck) {
+        enemyName = data.guest || 'OPPONENT';
+        // ロビーから削除してバトル状態へ
+        remove(ref(db, 'lobby/' + roomId));
+        setMatchUI('ready', enemyName);
+      }
+    });
+  }
+}
+
+function listenRoom(cb) {
+  const { onValue } = window._FB;
+  roomListener = onValue(roomRef, snap => {
+    if (snap.exists()) cb(snap.val());
+  });
+}
+
+function cancelMatch() {
+  const { db, ref, remove } = window._FB;
+  if (roomId) {
+    remove(ref(db, 'lobby/' + roomId));
+    remove(ref(db, 'rooms/' + roomId));
+    roomId = null; roomRef = null; myRole = null;
+  }
+  if (roomListener) { window._FB.off(roomRef); roomListener = null; }
+  showScreen('deck');
+}
+
+// ============================================================
+// BATTLE INIT  (online version)
+// ============================================================
+async function startBattle() {
+  // init battle state
+  battle.playerHP = 100; battle.enemyHP = 100;
+  battle.turn = 1;
+  battle.playerDmgUp = 0; battle.playerDmgReduce = 0; battle.playerShield = false;
+  battle.enemyDmgUp = 0; battle.enemyDmgReduce = 0; battle.enemyShield = false;
+  battle.playerForced = null; battle.enemyForced = null;
+  battle.playerDrawDmg = 0; battle.enemyDrawDmg = 0;
+  battle.playerReflect = 0; battle.enemyReflect = 0;
+  battle.playerExtraDraw = 0; battle.enemyExtraDraw = 0;
+  battle.playerHand = []; battle.enemyHand = [];
+  battle.playerDeckRemain = shuffle([...playerDeck]);
+
+  // 相手のデッキをFirebaseから取得
+  const { db, ref, get, set, update } = window._FB;
+  const snap = await get(ref(db, 'rooms/' + roomId));
+  const roomData = snap.val();
+  const enemyDeck = myRole === 'host' ? roomData.guestDeck : roomData.hostDeck;
+  battle.enemyDeckRemain = shuffle([...enemyDeck]);
+
+  // バトル開始を通知
+  await update(ref(db, 'rooms/' + roomId), { status: 'battle', turn: 1 });
+
+  showScreen('battle');
+  document.getElementById('player-name-display').textContent = playerName.substring(0,8);
+  document.getElementById('enemy-name-display').textContent = enemyName.substring(0,8);
+  startTurn();
+}
+
+function buildAIDeck() {
+  // randomDeck と同じロジックで厳密に16枚・コスト200以内
+  const sel = {};
+  const pool = shuffle([...CARD_DB]);
+  let cost = 0, count = 0, tries = 0;
+  while (count < 16 && tries < 500) {
+    tries++;
+    const card = pool[tries % pool.length];
+    const cur = sel[card.id] || 0;
+    if (cur >= 2) continue;
+    if (cost + card.cost > 200) continue;
+    sel[card.id] = cur + 1;
+    cost += card.cost;
+    count++;
+  }
+  // 不足分はBランクで補完
+  if (count < 16) {
+    const bCards = shuffle(CARD_DB.filter(c => c.rank === 'B'));
+    for (const card of bCards) {
+      while (count < 16 && cost + card.cost <= 200 && (sel[card.id]||0) < 2) {
+        sel[card.id] = (sel[card.id]||0) + 1;
+        cost += card.cost;
+        count++;
+      }
+      if (count >= 16) break;
+    }
+  }
+  const deck = [];
+  Object.entries(sel).forEach(([id, cnt]) => { for (let i = 0; i < cnt; i++) deck.push(id); });
+  return shuffle(deck);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+// ============================================================
+// TURN FLOW
+// ============================================================
+const MAX_HAND = 10;
+
+function startTurn() {
+  battle.selectedHand = null;
+  battle.selectedCards = [];
+  battle.phase = 'select';
+  Audio.sfx('turnStart');
+
+  // Reset UI hands
+  document.getElementById('player-hand-emoji').textContent = '❓';
+  document.getElementById('enemy-hand-emoji').textContent = '❓';
+  document.getElementById('player-hand-emoji').className = 'hand-emoji';
+  document.getElementById('enemy-hand-emoji').className = 'hand-emoji';
+  const pTag = document.getElementById('player-rps-tag');
+  const eTag = document.getElementById('enemy-rps-tag');
+  if (pTag) { pTag.textContent=''; pTag.className='rps-name-tag rps-tag-player'; }
+  if (eTag) { eTag.textContent=''; eTag.className='rps-name-tag rps-tag-enemy'; }
+  document.getElementById('player-card-zone').innerHTML = '';
+  document.getElementById('enemy-card-zone').innerHTML = '';
+  document.querySelectorAll('.rps-btn').forEach(b => b.classList.remove('selected'));
+
+  document.getElementById('turn-badge').textContent = 'TURN ' + battle.turn;
+  updateHPDisplay();
+
+  // ── プレイヤー: 持ち越し手札に最大2枚ドロー (上限MAX_HAND) + extraDrawボーナス ──
+  const baseDrawP = 2 + (battle.playerExtraDraw || 0);
+  battle.playerExtraDraw = 0;
+  const playerDrawCount = Math.max(0, Math.min(baseDrawP, MAX_HAND - battle.playerHand.length));
+  if (playerDrawCount > 0) {
+    const drawn = drawCardsFromDeck(battle.playerDeckRemain, playerDrawCount);
+    battle.playerHand.push(...drawn);
+  }
+
+  // ── AI: 持ち越し手札に最大2枚ドロー (上限MAX_HAND) ──
+  const baseDrawE = 2 + (battle.enemyExtraDraw || 0);
+  battle.enemyExtraDraw = 0;
+  const enemyDrawCount = Math.max(0, Math.min(baseDrawE, MAX_HAND - battle.enemyHand.length));
+  if (enemyDrawCount > 0) {
+    const drawn = drawCardsFromDeck(battle.enemyDeckRemain, enemyDrawCount);
+    battle.enemyHand.push(...drawn);
+  }
+
+  renderHandCards();
+  showHandSelectArea(true);
+  setArenaStatus('');
+
+  // 手札枚数表示を更新
+  updateHandCountDisplay();
+
+  const msg = document.getElementById('battle-status-msg');
+  msg.textContent = '手とカードを選択してください';
+  document.getElementById('battle-confirm-btn').style.display = 'none';
+}
+
+function drawCardsFromDeck(deck, count) {
+  // バトル中はデッキを使い切るだけ。リサイクルしない
+  const drawn = [];
+  for (let i = 0; i < count; i++) {
+    if (deck.length === 0) break;
+    drawn.push(deck.shift());
+  }
+  return drawn;
+}
+
+function updateHandCountDisplay() {
+  const cnt = battle.playerHand.length;
+  const el = document.getElementById('hand-count-badge');
+  if (el) {
+    el.textContent = `手札 ${cnt}/${MAX_HAND}`;
+    el.style.color = cnt >= MAX_HAND ? '#ff006e' : cnt >= 8 ? '#ffd600' : '#00f5ff';
+  }
+}
+
+function renderHandCards() {
+  const container = document.getElementById('battle-hand-cards');
+  container.innerHTML = '';
+
+  if (battle.playerHand.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:16px 8px;font-family:Orbitron,monospace;letter-spacing:1px;">手札なし</div>';
+    updateHandCountDisplay();
+    return;
+  }
+
+  const handLen = battle.playerHand.length;
+  // 今ターンドローした枚数（上限2、ただしMAX_HAND制限後の実際枚数）
+  const drewThisTurn = Math.min(2, handLen);
+
+  battle.playerHand.forEach((id, idx) => {
+    const card = getCard(id);
+    if (!card) return;
+    const el = document.createElement('div');
+    el.className = 'bh-card';
+    el.id = 'bhcard-' + idx;
+    const isNew = idx >= handLen - drewThisTurn;
+    if (isNew) el.classList.add('bh-card-new');
+    el.innerHTML = `
+      <span class="bh-rank rank-${card.rank}">${card.rank}</span>
+      <div class="bh-sel-num" id="bhcard-num-${idx}"></div>
+      <div class="bh-icon">${card.icon}</div>
+      <div class="bh-name">${card.name}</div>
+      <div class="bh-desc">${card.desc}</div>
+      ${isNew ? '<div class="bh-new-badge">NEW</div>' : ''}
+    `;
+    el.onclick = () => openCardDetail(idx, id);
+    container.appendChild(el);
+  });
+  updateHandCountDisplay();
+}
+
+// Current detail popup state
+let cdpCurrentIdx = -1;
+let cdpCurrentId = '';
+
+function openCardDetail(idx, id) {
+  const card = getCard(id);
+  if (!card) return;
+  cdpCurrentIdx = idx;
+  cdpCurrentId = id;
+
+  document.getElementById('cdp-icon').textContent = card.icon;
+  document.getElementById('cdp-name').textContent = card.name;
+  const rankEl = document.getElementById('cdp-rank');
+  rankEl.textContent = card.rank;
+  rankEl.className = 'cdp-rank rank-' + card.rank;
+  document.getElementById('cdp-cost').textContent = 'COST: ' + card.cost;
+  document.getElementById('cdp-desc').textContent = card.desc;
+  document.getElementById('cdp-detail').textContent = card.detail || card.desc;
+
+  const key = id + '_' + idx;
+  const isSelected = battle.selectedCards.indexOf(key) !== -1;
+  const btn = document.getElementById('cdp-action-btn');
+  if (isSelected) {
+    btn.textContent = '✕ 選択解除';
+    btn.className = 'cdp-deselect';
+  } else {
+    btn.textContent = '✔ このカードを使う';
+    btn.className = 'cdp-select';
+  }
+
+  document.getElementById('cdp-overlay').classList.add('show');
+  document.getElementById('card-detail-popup').classList.add('show');
+}
+
+function closeCardDetail() {
+  document.getElementById('cdp-overlay').classList.remove('show');
+  document.getElementById('card-detail-popup').classList.remove('show');
+}
+
+function showDeckCardDetail(id) {
+  const card = getCard(id);
+  if (!card) return;
+  // Reuse the card detail popup but without select/deselect
+  cdpCurrentIdx = -99; // sentinel for deck mode
+  cdpCurrentId = id;
+  document.getElementById('cdp-icon').textContent = card.icon;
+  document.getElementById('cdp-name').textContent = card.name;
+  const rankEl = document.getElementById('cdp-rank');
+  rankEl.textContent = card.rank;
+  rankEl.className = 'cdp-rank rank-' + card.rank;
+  document.getElementById('cdp-cost').textContent = 'COST: ' + card.cost;
+  document.getElementById('cdp-desc').textContent = card.desc;
+  document.getElementById('cdp-detail').textContent = card.detail || card.desc;
+  const btn = document.getElementById('cdp-action-btn');
+  btn.textContent = '✔ デッキに追加';
+  btn.className = 'cdp-select';
+  document.getElementById('cdp-overlay').classList.add('show');
+  document.getElementById('card-detail-popup').classList.add('show');
+}
+
+function cdpToggleCard() {
+  if (cdpCurrentIdx === -99) {
+    // deck mode
+    toggleDeckCard(cdpCurrentId);
+    closeCardDetail();
+    return;
+  }
+  const idx = cdpCurrentIdx;
+  const id = cdpCurrentId;
+  const key = id + '_' + idx;
+  const pos = battle.selectedCards.indexOf(key);
+  const el = document.getElementById('bhcard-' + idx);
+  const numEl = document.getElementById('bhcard-num-' + idx);
+
+  if (pos !== -1) {
+    battle.selectedCards.splice(pos, 1);
+    el.classList.remove('selected');
+    numEl.textContent = '';
+  } else {
+    if (battle.selectedCards.length >= 3) {
+      document.getElementById('battle-status-msg').textContent = 'カードは最大3枚まで';
+      closeCardDetail();
+      return;
+    }
+    battle.selectedCards.push(key);
+    el.classList.add('selected');
+    numEl.textContent = battle.selectedCards.filter(s => s === key).length;
+  }
+  closeCardDetail();
+  checkConfirmReady();
+}
+
+// (card toggle is now handled via openCardDetail / cdpToggleCard)
+
+function selectHand(h) {
+  Audio.sfx('click');
+  battle.selectedHand = h;
+  ['guu','paa','choki'].forEach(x => {
+    document.getElementById('rps-' + x).classList.toggle('selected', x === h);
+  });
+  checkConfirmReady();
+}
+
+function checkConfirmReady() {
+  const btn = document.getElementById('battle-confirm-btn');
+  if (battle.selectedHand) {
+    btn.style.display = 'block';
+    document.getElementById('battle-status-msg').textContent = '';
+  }
+}
+
+function confirmAction() {
+  if (!battle.selectedHand) return;
+  Audio.sfx('confirm');
+  showHandSelectArea(false);
+  setArenaStatus('相手の行動を待っています...');
+  document.getElementById('battle-status-msg').textContent = '';
+  submitMyAction();
+}
+
+// 自分の行動をFirebaseに書き込み、相手の行動を待つ
+async function submitMyAction() {
+  const { db, ref, set, onValue, off } = window._FB;
+  const myKey   = myRole;          // 'host' or 'guest'
+  const turnPath = `rooms/${roomId}/turns/${battle.turn}`;
+
+  const myAction = {
+    hand:  battle.selectedHand,
+    cards: battle.selectedCards.map(k => k.split('_')[0])
+  };
+
+  await set(ref(db, `${turnPath}/${myKey}`), myAction);
+
+  // 相手の行動を監視
+  const enemyKey  = myRole === 'host' ? 'guest' : 'host';
+  const enemyRef  = ref(db, `${turnPath}/${enemyKey}`);
+  const unsubscribe = onValue(enemyRef, snap => {
+    if (!snap.exists()) return;
+    off(enemyRef);  // 一度だけ受け取ったらリスナー解除
+
+    const enemyAction = snap.val();
+    battle.enemySelectedHand  = enemyAction.hand;
+    battle.enemySelectedCards = enemyAction.cards || [];
+
+    // enemyHandのインデックス合わせ（表示用に使う分だけ）
+    // cards配列はcard idの配列として使う（AI版と同様）
+
+    resolveRound();
+  });
+}
+
+function showHandSelectArea(show) {
+  const area = document.getElementById('hand-select-area');
+  if (show) {
+    area.classList.remove('hidden-select');
+  } else {
+    area.classList.add('hidden-select');
+  }
+}
+
+function setArenaStatus(msg) {
+  const el = document.getElementById('arena-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.opacity = msg ? '1' : '0';
+}
+
+// ============================================================
+// ROUND RESOLUTION
+// ============================================================
+async function resolveRound() {
+  document.getElementById('battle-status-msg').textContent = '';
+  setArenaStatus('');
+
+  const revealQueue = interleave(
+    battle.selectedCards.map(k => ({ owner:'player', cardId: k.split('_')[0] })),
+    battle.enemySelectedCards.map(id => ({ owner:'enemy', cardId: id }))
+  );
+
+  if (revealQueue.length === 0) {
+    resolveHandBattle();
+    return;
+  }
+
+  window._revealQueue = revealQueue;
+  document.getElementById('resolution-overlay').style.display = 'flex';
+  renderSpotlight(revealQueue, 0);
+}
+
+function interleave(a, b) {
+  const out = [];
+  const max = Math.max(a.length, b.length);
+  for (let i = 0; i < max; i++) {
+    if (i < a.length) out.push(a[i]);
+    if (i < b.length) out.push(b[i]);
+  }
+  return out;
+}
+
+const RANK_GLOW_COLOR = { S:'#ff006e', A:'#ff8c00', B:'#00b4ff' };
+
+function renderSpotlight(queue, idx) {
+  const item = queue[idx];
+  const card = getCard(item.cardId);
+  if (!card) { nextCardReveal(); return; }
+
+  const isPlayer = item.owner === 'player';
+  const ownerLabel = isPlayer ? playerName : enemyName;
+  const ownerClass = isPlayer ? 'player-side' : 'enemy-side';
+  const rankColor = RANK_GLOW_COLOR[card.rank] || '#fff';
+
+  // Spotlight glow bg color
+  const glowRgb = card.rank==='S' ? '255,0,110' : card.rank==='A' ? '255,140,0' : '0,180,255';
+
+  const wrap = document.getElementById('card-spotlight-wrap');
+  wrap.innerHTML = `
+    <div class="card-spotlight">
+      <div class="card-spotlight-glow" style="background:radial-gradient(ellipse at center, rgba(${glowRgb},0.35) 0%, transparent 70%);"></div>
+      <div class="card-spotlight-body rank-glow-${card.rank}">
+        <div class="cs-rank-badge rank-${card.rank}">${card.rank}</div>
+        <div class="cs-owner ${ownerClass}">${ownerLabel.substring(0,10)}</div>
+        <div class="cs-icon">${card.icon}</div>
+        <div class="cs-name">${card.name}</div>
+        <div class="cs-effect-box">${card.desc}</div>
+        <div class="cs-detail">${card.detail || card.desc}</div>
+      </div>
+    </div>
+  `;
+
+  // Counter
+  document.getElementById('cs-counter').textContent = `${idx + 1} / ${queue.length}`;
+
+  // Button label
+  const btn = document.getElementById('next-card-btn');
+  btn.textContent = idx >= queue.length - 1 ? '⚔️ BATTLE' : 'ACTIVATE ▶';
+  btn._idx = idx;
+
+  // Shoot particles + sound
+  setTimeout(() => { burstParticles(rankColor); Audio.sfx('cardReveal', card.rank); }, 80);
+
+  // S rank special: full screen flash
+  if (card.rank === 'S') {
+    setTimeout(() => flashScreenColor(rankColor), 60);
+  }
+}
+
+function burstParticles(color) {
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  const count = 18;
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'particle';
+    el.style.background = color;
+    el.style.left = cx + 'px';
+    el.style.top = cy + 'px';
+    const angle = (i / count) * Math.PI * 2;
+    const dist = 80 + Math.random() * 120;
+    el.style.setProperty('--tx', (Math.cos(angle) * dist) + 'px');
+    el.style.setProperty('--ty', (Math.sin(angle) * dist) + 'px');
+    el.style.boxShadow = `0 0 8px ${color}`;
+    el.style.animationDuration = (0.5 + Math.random() * 0.4) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+  }
+}
+
+function flashScreenColor(color) {
+  const el = document.getElementById('screen-flash');
+  el.style.background = color;
+  el.style.opacity = '0.35';
+  el.className = 'screen-flash';
+  void el.offsetWidth;
+  el.style.transition = 'opacity 0.4s';
+  el.style.opacity = '0';
+}
+
+function nextCardReveal() {
+  const queue = window._revealQueue;
+  const btn = document.getElementById('next-card-btn');
+  const idx = btn._idx;
+
+  // Apply the current card's effect
+  const item = queue[idx];
+  if (item) {
+    Audio.sfx('activate');
+    applyCardEffect(item.owner, item.cardId);
+    const card = getCard(item.cardId);
+    if (card) spawnEffectToast(card.desc, RANK_GLOW_COLOR[card.rank] || '#fff', item.owner === 'player');
+  }
+
+  if (idx >= queue.length - 1) {
+    document.getElementById('resolution-overlay').style.display = 'none';
+    resolveHandBattle();
+  } else {
+    renderSpotlight(queue, idx + 1);
+  }
+}
+
+function spawnEffectToast(text, color, isPlayer) {
+  const el = document.createElement('div');
+  el.className = 'effect-toast';
+  el.textContent = text;
+  el.style.color = color;
+  el.style.left = '50%';
+  el.style.transform = 'translateX(-50%)';
+  el.style.top = isPlayer ? '60%' : '30%';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+function applyCardEffect(owner, cardId) {
+  const card = getCard(cardId);
+  if (!card) return;
+  const e = card.effect;
+  const isPlayer = owner === 'player';
+
+  if (e.heal) {
+    if (isPlayer) { battle.playerHP = Math.min(100, battle.playerHP + e.heal); }
+    else { battle.enemyHP = Math.min(100, battle.enemyHP + e.heal); }
+    updateHPDisplay();
+    spawnDmgNumber('+' + e.heal, isPlayer ? '#00ff88' : '#ff8c00', isPlayer);
+    Audio.sfx('heal');
+  }
+  if (e.dmgUp) {
+    if (isPlayer) battle.playerDmgUp += e.dmgUp;
+    else battle.enemyDmgUp += e.dmgUp;
+  }
+  if (e.dmgReduce) {
+    if (isPlayer) battle.playerDmgReduce += e.dmgReduce;
+    else battle.enemyDmgReduce += e.dmgReduce;
+  }
+  if (e.shield) {
+    if (isPlayer) battle.playerShield = true;
+    else battle.enemyShield = true;
+    Audio.sfx('shield');
+  }
+  if (e.forceEnemy) {
+    if (isPlayer) battle.enemyForced = e.forceEnemy;
+    else battle.playerForced = e.forceEnemy;
+  }
+  if (e.drain) {
+    if (isPlayer) {
+      battle.enemyHP = Math.max(0, battle.enemyHP - e.drain);
+      battle.playerHP = Math.min(100, battle.playerHP + e.drain);
+    } else {
+      battle.playerHP = Math.max(0, battle.playerHP - e.drain);
+      battle.enemyHP = Math.min(100, battle.enemyHP + e.drain);
+    }
+    updateHPDisplay();
+    Audio.sfx('damage');
+  }
+  if (e.selfDmg) {
+    if (isPlayer) {
+      battle.playerHP = Math.max(0, battle.playerHP - e.selfDmg);
+      spawnDmgNumber('-' + e.selfDmg, '#ff8c00', true);
+    } else {
+      battle.enemyHP = Math.max(0, battle.enemyHP - e.selfDmg);
+    }
+    updateHPDisplay();
+  }
+  if (e.drawDmg) {
+    if (isPlayer) battle.playerDrawDmg = (battle.playerDrawDmg||0) + e.drawDmg;
+    else battle.enemyDrawDmg = (battle.enemyDrawDmg||0) + e.drawDmg;
+  }
+  if (e.directDmgEnemy) {
+    if (isPlayer) {
+      battle.enemyHP = Math.max(0, battle.enemyHP - e.directDmgEnemy);
+      spawnDmgNumber('-' + e.directDmgEnemy, '#ff006e', false);
+    } else {
+      battle.playerHP = Math.max(0, battle.playerHP - e.directDmgEnemy);
+      spawnDmgNumber('-' + e.directDmgEnemy, '#ff006e', true);
+    }
+    updateHPDisplay();
+    Audio.sfx('damage');
+  }
+  if (e.healBonus) {
+    if (isPlayer) { battle.playerHP = Math.min(100, battle.playerHP + e.healBonus); }
+    else { battle.enemyHP = Math.min(100, battle.enemyHP + e.healBonus); }
+    updateHPDisplay();
+    spawnDmgNumber('+' + e.healBonus, '#00ff88', isPlayer);
+    Audio.sfx('heal');
+  }
+  if (e.forceEnemyRandom) {
+    const hands = ['guu','paa','choki'];
+    if (isPlayer) battle.enemyForced = hands[Math.floor(Math.random()*3)];
+    else battle.playerForced = hands[Math.floor(Math.random()*3)];
+  }
+  if (e.reflect) {
+    if (isPlayer) battle.playerReflect = (battle.playerReflect||0) + e.reflect;
+    else battle.enemyReflect = (battle.enemyReflect||0) + e.reflect;
+  }
+  if (e.lowHpBoost) {
+    const missingHp = isPlayer ? (100 - battle.playerHP) : (100 - battle.enemyHP);
+    const bonus = Math.min(20, Math.floor(missingHp * 0.25));
+    if (isPlayer) battle.playerDmgUp += bonus;
+    else battle.enemyDmgUp += bonus;
+  }
+  if (e.extraDraw) {
+    if (isPlayer) battle.playerExtraDraw = (battle.playerExtraDraw||0) + e.extraDraw;
+    else battle.enemyExtraDraw = (battle.enemyExtraDraw||0) + e.extraDraw;
+  }
+}
+
+function resolveHandBattle() {
+  let ph = battle.playerForced || battle.selectedHand;
+  let eh = battle.enemyForced || battle.enemySelectedHand;
+
+  const RPS_NAME_JP = { guu:'グー ✊', paa:'パー ✋', choki:'チョキ ✌️' };
+
+  // Show player/enemy cards played
+  renderPlayedCards('player-card-zone', battle.selectedCards.map(k => k.split('_')[0]));
+  renderPlayedCards('enemy-card-zone', battle.enemySelectedCards);
+
+  // Set name badges
+  document.getElementById('player-hand-name').textContent = playerName.substring(0,8);
+  document.getElementById('enemy-hand-name').textContent = enemyName.substring(0,8);
+
+  // Reset to question marks
+  const pEmoji = document.getElementById('player-hand-emoji');
+  const eEmoji = document.getElementById('enemy-hand-emoji');
+  const pTag = document.getElementById('player-rps-tag');
+  const eTag = document.getElementById('enemy-rps-tag');
+  pEmoji.textContent = '❓'; eEmoji.textContent = '❓';
+  pEmoji.className = 'hand-emoji'; eEmoji.className = 'hand-emoji';
+  pTag.textContent = ''; pTag.className = 'rps-name-tag rps-tag-player';
+  eTag.textContent = ''; eTag.className = 'rps-name-tag rps-tag-enemy';
+
+  // Step 1: reveal enemy hand (300ms delay)
+  setTimeout(() => {
+    flashScreenColor('#ff006e');
+    burstParticles('#ff006e');
+    Audio.sfx('enemyReveal');
+    eEmoji.textContent = RPS_EMOJI[eh];
+    eEmoji.classList.add('reveal-anim');
+    eTag.textContent = RPS_NAME_JP[eh];
+    eTag.classList.add('show');
+  }, 300);
+
+  // Step 2: reveal player hand (900ms delay)
+  setTimeout(() => {
+    flashScreenColor('#00f5ff');
+    burstParticles('#00f5ff');
+    Audio.sfx('playerReveal');
+    pEmoji.textContent = RPS_EMOJI[ph];
+    pEmoji.classList.add('reveal-anim');
+    pTag.textContent = RPS_NAME_JP[ph];
+    pTag.classList.add('show');
+  }, 900);
+
+  // Step 3: determine result & apply damage (1600ms)
+  setTimeout(() => {
+    let result;
+    if (ph === eh) result = 'draw';
+    else if ((ph==='guu'&&eh==='choki')||(ph==='choki'&&eh==='paa')||(ph==='paa'&&eh==='guu')) result = 'player';
+    else result = 'enemy';
+
+    // Winner/loser highlight on emojis
+    if (result === 'player') {
+      pEmoji.classList.add('winner'); eEmoji.classList.add('loser');
+    } else if (result === 'enemy') {
+      eEmoji.classList.add('winner'); pEmoji.classList.add('loser');
+    }
+
+    let baseDmg = 10;
+    let playerTookDmg = 0, enemyTookDmg = 0;
+
+    if (result === 'draw') {
+      let dmg = 5;
+      if (!battle.playerShield) playerTookDmg = Math.max(0, dmg - battle.playerDmgReduce);
+      if (!battle.enemyShield) enemyTookDmg = Math.max(0, dmg - battle.enemyDmgReduce);
+      if (battle.playerDrawDmg) enemyTookDmg += battle.playerDrawDmg;
+      if (battle.enemyDrawDmg) playerTookDmg += battle.enemyDrawDmg;
+    } else if (result === 'player') {
+      let dmg = baseDmg + battle.playerDmgUp;
+      if (!battle.enemyShield) enemyTookDmg = Math.max(0, dmg - battle.enemyDmgReduce);
+    } else {
+      let dmg = baseDmg + battle.enemyDmgUp;
+      if (!battle.playerShield) playerTookDmg = Math.max(0, dmg - battle.playerDmgReduce);
+    }
+
+    battle.playerHP = Math.max(0, battle.playerHP - playerTookDmg);
+    battle.enemyHP = Math.max(0, battle.enemyHP - enemyTookDmg);
+    updateHPDisplay();
+
+    // ── 発動したカードを手札から除去（バトル中は再ドロー不可） ──
+    const usedHandIndices = battle.selectedCards.map(k => parseInt(k.split('_')[1])).sort((a,b)=>b-a);
+    usedHandIndices.forEach(idx => {
+      if (idx >= 0 && idx < battle.playerHand.length) {
+        battle.playerHand.splice(idx, 1);
+      }
+    });
+    battle.enemySelectedCards.forEach(id => {
+      const pos = battle.enemyHand.indexOf(id);
+      if (pos !== -1) { battle.enemyHand.splice(pos, 1); }
+    });
+
+    // リフレクト処理
+    if (battle.playerReflect && playerTookDmg > 0) {
+      const rd = Math.floor(playerTookDmg * battle.playerReflect);
+      battle.enemyHP = Math.max(0, battle.enemyHP - rd);
+      spawnDmgNumber('-' + rd, '#ff8c00', false);
+      updateHPDisplay();
+    }
+    if (battle.enemyReflect && enemyTookDmg > 0) {
+      const rd = Math.floor(enemyTookDmg * battle.enemyReflect);
+      battle.playerHP = Math.max(0, battle.playerHP - rd);
+      updateHPDisplay();
+    }
+
+    // Reset turn buffs
+    battle.playerDmgUp = 0; battle.playerDmgReduce = 0; battle.playerShield = false;
+    battle.enemyDmgUp = 0; battle.enemyDmgReduce = 0; battle.enemyShield = false;
+    battle.playerForced = null; battle.enemyForced = null;
+    battle.playerDrawDmg = 0; battle.enemyDrawDmg = 0;
+    battle.playerReflect = 0; battle.enemyReflect = 0;
+
+    showRoundResult(result, ph, eh, playerTookDmg, enemyTookDmg);
+    if (playerTookDmg > 0) { flashScreen('flash-red'); spawnDmgNumber('-' + playerTookDmg, '#ff006e', true); Audio.sfx('damage'); }
+    if (enemyTookDmg > 0) { spawnDmgNumber('-' + enemyTookDmg, '#ff006e', false); }
+
+    setTimeout(() => {
+      if (battle.playerHP <= 0 || battle.enemyHP <= 0) { endBattle(); }
+      else { battle.turn++; startTurn(); }
+    }, 2000);
+  }, 1600);
+}
+
+function renderPlayedCards(zoneId, cardIds) {
+  const zone = document.getElementById(zoneId);
+  zone.innerHTML = '';
+  cardIds.forEach(id => {
+    const card = getCard(id);
+    if (!card) return;
+    const el = document.createElement('div');
+    el.className = 'battle-card played';
+    el.innerHTML = `
+      <span class="bc-rank rank-${card.rank}">${card.rank}</span>
+      <div class="bc-icon">${card.icon}</div>
+      <div class="bc-name">${card.name}</div>
+    `;
+    zone.appendChild(el);
+  });
+}
+
+function showRoundResult(result, ph, eh, pdmg, edmg) {
+  const popup = document.getElementById('round-result-popup');
+  const mainEl = document.getElementById('rr-main');
+  const dmgEl = document.getElementById('rr-damage');
+  popup.classList.remove('show');
+
+  if (result === 'draw') {
+    Audio.sfx('draw');
+    mainEl.style.color = '#00f5ff'; mainEl.textContent = 'DRAW!';
+    dmgEl.style.color = '#aaa';    dmgEl.textContent = `両者 -${pdmg}`;
+  } else if (result === 'player') {
+    Audio.sfx('win');
+    mainEl.style.color = '#ffd600'; mainEl.textContent = 'WIN!';
+    dmgEl.style.color = '#ff006e'; dmgEl.textContent = `${enemyName} -${edmg}`;
+  } else {
+    Audio.sfx('lose');
+    mainEl.style.color = '#ff006e'; mainEl.textContent = 'LOSE...';
+    dmgEl.style.color = '#ff006e'; dmgEl.textContent = `${playerName} -${pdmg}`;
+  }
+
+  void popup.offsetWidth;
+  popup.classList.add('show');
+}
+
+function endBattle() {
+  const result = document.getElementById('battle-result');
+  const txt = document.getElementById('result-text');
+  const sub = document.getElementById('result-sub');
+
+  if (battle.playerHP <= 0 && battle.enemyHP <= 0) {
+    Audio.sfx('draw');
+    txt.className = 'result-text result-draw'; txt.textContent = 'DRAW';
+    sub.textContent = '両者同時にHP0';
+  } else if (battle.enemyHP <= 0) {
+    Audio.sfx('victory');
+    txt.className = 'result-text result-win'; txt.textContent = 'VICTORY!';
+    sub.textContent = `${enemyName} を倒した！`;
+  } else {
+    Audio.sfx('defeat');
+    txt.className = 'result-text result-lose'; txt.textContent = 'DEFEATED';
+    sub.textContent = `${enemyName} に敗れた...`;
+  }
+  result.classList.add('show');
+
+  // Firebase クリーンアップ
+  if (roomId && window._FB) {
+    const { db, ref, remove } = window._FB;
+    remove(ref(db, 'rooms/' + roomId));
+    roomId = null; roomRef = null; myRole = null;
+  }
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function updateHPDisplay() {
+  const ph = Math.max(0, battle.playerHP);
+  const eh = Math.max(0, battle.enemyHP);
+  document.getElementById('player-hp-bar').style.width = ph + '%';
+  document.getElementById('enemy-hp-bar').style.width = eh + '%';
+  document.getElementById('player-hp-val').textContent = ph;
+  document.getElementById('enemy-hp-val').textContent = eh;
+}
+
+function flashScreen(cls) {
+  const el = document.getElementById('screen-flash');
+  el.className = 'screen-flash ' + cls;
+  void el.offsetWidth;
+}
+
+function spawnDmgNumber(text, color, isPlayer) {
+  const el = document.createElement('div');
+  el.className = 'dmg-number';
+  el.textContent = text;
+  el.style.color = color;
+  el.style.fontSize = '32px';
+  el.style.fontFamily = "'Orbitron', monospace";
+  el.style.fontWeight = '900';
+  el.style.textShadow = '0 0 20px ' + color;
+  // position
+  if (isPlayer) {
+    el.style.left = '30%';
+    el.style.top = '60%';
+  } else {
+    el.style.left = '55%';
+    el.style.top = '30%';
+  }
+  document.body.appendChild(el);
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(() => el.remove(), 1600);
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║              AUDIO ENGINE  (Web Audio API)               ║
+// ╚══════════════════════════════════════════════════════════╝
+const Audio = (() => {
+  let ctx, master, bgmBus, sfxBus;
+  let bgmEnabled = true, sfxEnabled = true;
+  let currentScene = null;
+  let bgmTimer = null;
+  let bgmNodes = [];
+
+  function boot() {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master  = ctx.createGain(); master.gain.value  = 0.75;
+    bgmBus  = ctx.createGain(); bgmBus.gain.value  = 0.22;
+    sfxBus  = ctx.createGain(); sfxBus.gain.value  = 0.60;
+    bgmBus.connect(master); sfxBus.connect(master);
+    master.connect(ctx.destination);
+  }
+  function resume() { boot(); if (ctx.state === 'suspended') ctx.resume(); }
+
+  /* ── util ── */
+  function osc(freq, type, vol, t0, t1, to) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.linearRampToValueAtTime(0, t1);
+    o.connect(g); g.connect(to || sfxBus);
+    o.start(t0); o.stop(t1 + 0.01);
+  }
+  function noise(dur, vol, cut, to) {
+    const sz = Math.ceil(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, sz, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < sz; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = cut;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    src.connect(filt); filt.connect(g); g.connect(to || sfxBus);
+    src.start(); src.stop(ctx.currentTime + dur);
+  }
+
+  /* ── SFX ── */
+  const SFX = {
+    click()       { const t=ctx.currentTime; osc(900,'sine',.28,t,t+.08); osc(1350,'sine',.14,t+.04,t+.13); },
+    cardPick()    { const t=ctx.currentTime; osc(660,'triangle',.22,t,t+.07); osc(990,'triangle',.14,t+.05,t+.14); },
+    cardDrop()    { const t=ctx.currentTime; osc(420,'triangle',.2,t,t+.09); },
+    confirm()     { const t=ctx.currentTime; [440,550,660,880].forEach((f,i)=>osc(f,'square',.18,t+i*.06,t+i*.06+.1)); },
+    turnStart()   { const t=ctx.currentTime; osc(330,'triangle',.2,t,t+.1); osc(495,'triangle',.14,t+.08,t+.18); },
+    enemyReveal() { const t=ctx.currentTime; osc(180,'sawtooth',.28,t,t+.13); noise(.08,.28,400); },
+    playerReveal(){ const t=ctx.currentTime; osc(330,'square',.26,t,t+.1); osc(494,'square',.2,t+.07,t+.18); noise(.07,.22,600); },
+    win()         { const t=ctx.currentTime; [523,659,784,1047].forEach((f,i)=>{osc(f,'triangle',.28,t+i*.1,t+i*.1+.26);osc(f*2,'sine',.1,t+i*.1,t+i*.1+.2);}); },
+    lose()        { const t=ctx.currentTime; [440,330,220,165].forEach((f,i)=>osc(f,'sawtooth',.22,t+i*.1,t+i*.1+.22)); },
+    draw()        { const t=ctx.currentTime; osc(440,'triangle',.18,t,t+.1); osc(440,'triangle',.18,t+.16,t+.26); },
+    heal()        { const t=ctx.currentTime; [523,659,784,1047,1319].forEach((f,i)=>osc(f,'sine',.16,t+i*.05,t+i*.05+.13)); },
+    damage()      { const t=ctx.currentTime; noise(.12,.48,900); osc(110,'sawtooth',.38,t,t+.16); osc(75,'square',.28,t+.05,t+.26); },
+    shield()      { const t=ctx.currentTime; [880,1100,1320].forEach((f,i)=>osc(f,'sine',.18,t+i*.04,t+i*.04+.15)); },
+    cardReveal(r) {
+      const t=ctx.currentTime;
+      if (r==='S') { [523,659,784,1047,784,1047,1319].forEach((f,i)=>osc(f,'sawtooth',.16,t+i*.07,t+i*.07+.19)); noise(.32,.32,320); }
+      else if (r==='A') { [440,550,660,880].forEach((f,i)=>osc(f,'triangle',.18,t+i*.06,t+i*.06+.16)); }
+      else { osc(330,'triangle',.22,t,t+.09); osc(495,'triangle',.18,t+.06,t+.16); }
+    },
+    activate()    { const t=ctx.currentTime; osc(220,'sawtooth',.28,t,t+.06); osc(440,'sawtooth',.22,t+.04,t+.15); osc(880,'sine',.18,t+.1,t+.24); noise(.14,.28,550); },
+    matchFound()  { const t=ctx.currentTime; [440,550,660,880,1100].forEach((f,i)=>osc(f,'sine',.2,t+i*.08,t+i*.08+.2)); },
+    victory()     {
+      const t=ctx.currentTime;
+      [523,659,784,659,784,1047,784,1047,1319].forEach((f,i)=>{
+        osc(f,'square',.2,t+i*.09,t+i*.09+.22);
+        if(i%2===0) osc(f*.5,'triangle',.09,t+i*.09,t+i*.09+.18);
+      });
+    },
+    defeat()      { const t=ctx.currentTime; [392,330,262,196,131].forEach((f,i)=>osc(f,'sawtooth',.2,t+i*.16,t+i*.16+.32)); },
+  };
+
+  /* ── BGM loops ── */
+  function stopBgm() {
+    if (bgmTimer) { clearTimeout(bgmTimer); bgmTimer = null; }
+    bgmNodes.forEach(n => { try { n.stop(); } catch(e){} });
+    bgmNodes = []; currentScene = null;
+  }
+
+  function playBgm(scene) {
+    if (!bgmEnabled) return;
+    if (currentScene === scene) return;
+    stopBgm(); currentScene = scene;
+    if (scene === 'title')  loopTitle();
+    if (scene === 'battle') loopBattle();
+    if (scene === 'match')  loopMatch();
+  }
+
+  function schedBgm(fn, sec) {
+    bgmTimer = setTimeout(() => {
+      bgmNodes = bgmNodes.filter(n => { try { return n.context.state !== 'closed'; } catch(e){ return false; } });
+      fn();
+    }, sec * 1000);
+  }
+
+  // Title: mysterious, slow
+  function loopTitle() {
+    if (currentScene !== 'title' || !bgmEnabled) return;
+    const t = ctx.currentTime + .05, beat = 60/68;
+    const sc = [261.6,293.7,329.6,392,440,523.3,587.3,659.3];
+    [4,6,7,6,4,3,2,0,4,6,7,6,5,4,3,1].forEach((si,i) => {
+      const f = sc[si], nt = t + i * beat * .5;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0,nt); g.gain.linearRampToValueAtTime(.1,nt+.04);
+      g.gain.linearRampToValueAtTime(.05,nt+beat*.4); g.gain.linearRampToValueAtTime(0,nt+beat*.48);
+      o.connect(g); g.connect(bgmBus); o.start(nt); o.stop(nt+beat*.5); bgmNodes.push(o);
+    });
+    [130.8,98,110,130.8].forEach((f,i) => {
+      const nt = t + i * beat * 2;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type='triangle'; o.frequency.value=f;
+      g.gain.setValueAtTime(.12,nt); g.gain.linearRampToValueAtTime(.04,nt+beat*1.8); g.gain.linearRampToValueAtTime(0,nt+beat*2);
+      o.connect(g); g.connect(bgmBus); o.start(nt); o.stop(nt+beat*2); bgmNodes.push(o);
+    });
+    schedBgm(loopTitle, beat * 8 + .05);
+  }
+
+  // Battle: driving 8-bit beat
+  function loopBattle() {
+    if (currentScene !== 'battle' || !bgmEnabled) return;
+    const t = ctx.currentTime + .05, beat = 60/130;
+
+    // Kick drum
+    for (let i = 0; i < 8; i++) {
+      const nt = t + i * beat * .5;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(140, nt); o.frequency.exponentialRampToValueAtTime(38, nt+.13);
+      g.gain.setValueAtTime(.55, nt); g.gain.exponentialRampToValueAtTime(.001, nt+.2);
+      o.connect(g); g.connect(bgmBus); o.start(nt); o.stop(nt+.22); bgmNodes.push(o);
+    }
+    // Snare (noise)
+    [1,3,5,7].forEach(i => {
+      const nt = t + i * beat * .5;
+      const sz = Math.ceil(ctx.sampleRate * .08);
+      const buf = ctx.createBuffer(1,sz,ctx.sampleRate);
+      const d = buf.getChannelData(0); for(let j=0;j<sz;j++) d[j]=Math.random()*2-1;
+      const src = ctx.createBufferSource(); src.buffer=buf;
+      const fi = ctx.createBiquadFilter(); fi.type='bandpass'; fi.frequency.value=2200; fi.Q.value=.8;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(.18,nt); g.gain.exponentialRampToValueAtTime(.001,nt+.08);
+      src.connect(fi); fi.connect(g); g.connect(bgmBus); src.start(nt); src.stop(nt+.09); bgmNodes.push(src);
+    });
+    // Hi-hat
+    for (let i = 0; i < 16; i++) {
+      const nt = t + i * beat * .25;
+      const sz = Math.ceil(ctx.sampleRate * .03);
+      const buf = ctx.createBuffer(1,sz,ctx.sampleRate);
+      const d=buf.getChannelData(0); for(let j=0;j<sz;j++) d[j]=Math.random()*2-1;
+      const src = ctx.createBufferSource(); src.buffer=buf;
+      const fi = ctx.createBiquadFilter(); fi.type='highpass'; fi.frequency.value=9000;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(.06,nt); g.gain.exponentialRampToValueAtTime(.001,nt+.03);
+      src.connect(fi); fi.connect(g); g.connect(bgmBus); src.start(nt); src.stop(nt+.04); bgmNodes.push(src);
+    }
+    // Bass line
+    [55,55,73.4,55,65.4,55,73.4,65.4].forEach((f,i) => {
+      const nt = t + i * beat * .5;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      const fi = ctx.createBiquadFilter(); fi.type='lowpass'; fi.frequency.value=380;
+      o.type='sawtooth'; o.frequency.value=f;
+      g.gain.setValueAtTime(.22,nt); g.gain.linearRampToValueAtTime(.08,nt+beat*.44); g.gain.linearRampToValueAtTime(0,nt+beat*.5);
+      o.connect(fi); fi.connect(g); g.connect(bgmBus); o.start(nt); o.stop(nt+beat*.5); bgmNodes.push(o);
+    });
+    // Arpeggio lead
+    [220,277,330,220,277,330,262,220].forEach((f,i) => {
+      const nt = t + i * beat * .5;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type='square'; o.frequency.value=f;
+      g.gain.setValueAtTime(0,nt); g.gain.linearRampToValueAtTime(.065,nt+.02);
+      g.gain.linearRampToValueAtTime(.02,nt+beat*.3); g.gain.linearRampToValueAtTime(0,nt+beat*.48);
+      o.connect(g); g.connect(bgmBus); o.start(nt); o.stop(nt+beat*.5); bgmNodes.push(o);
+    });
+    // Counter-melody
+    [440,0,494,0,523,494,440,0].forEach((f,i) => {
+      if (!f) return;
+      const nt = t + i * beat * .5;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type='triangle'; o.frequency.value=f;
+      g.gain.setValueAtTime(0,nt); g.gain.linearRampToValueAtTime(.05,nt+.02);
+      g.gain.linearRampToValueAtTime(0,nt+beat*.45);
+      o.connect(g); g.connect(bgmBus); o.start(nt); o.stop(nt+beat*.5); bgmNodes.push(o);
+    });
+    schedBgm(loopBattle, beat * 4 + .05);
+  }
+
+  // Matchmaking: ambient tension
+  function loopMatch() {
+    if (currentScene !== 'match' || !bgmEnabled) return;
+    const t = ctx.currentTime + .05, beat = .9;
+    [[130.8,164.8,196],[146.8,185,220],[110,138.6,164.8],[123.5,155.6,185]].forEach((ch,ci) => {
+      ch.forEach(f => {
+        const nt = t + ci * beat;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type='sine'; o.frequency.value=f;
+        g.gain.setValueAtTime(0,nt); g.gain.linearRampToValueAtTime(.07,nt+.1);
+        g.gain.linearRampToValueAtTime(.04,nt+beat*.75); g.gain.linearRampToValueAtTime(0,nt+beat*.95);
+        o.connect(g); g.connect(bgmBus); o.start(nt); o.stop(nt+beat); bgmNodes.push(o);
+      });
+    });
+    schedBgm(loopMatch, beat * 4 + .05);
+  }
+
+  /* ── public API ── */
+  function sfx(name, ...a) { if (!sfxEnabled) return; boot(); resume(); if(SFX[name]) SFX[name](...a); }
+  function bgm(scene)      { if (!bgmEnabled) return; boot(); resume(); playBgm(scene); }
+
+  function toggleBgm() {
+    bgmEnabled = !bgmEnabled;
+    if (!bgmEnabled) stopBgm();
+    else { const s = currentScene; currentScene = null; bgm(s || 'title'); }
+    return bgmEnabled;
+  }
+  function toggleSfx() { sfxEnabled = !sfxEnabled; return sfxEnabled; }
+
+  return { sfx, bgm, toggleBgm, toggleSfx,
+           isBgmOn: () => bgmEnabled, isSfxOn: () => sfxEnabled };
+})();
+
+/* ── Sound control buttons ── */
+function buildSoundControls() {
+  const el = document.getElementById('sound-controls');
+  if (!el) return;
+  const btnStyle = `background:rgba(0,0,0,0.5);border:1px solid var(--border);color:var(--accent);
+    border-radius:8px;padding:3px 9px;font-size:14px;cursor:pointer;line-height:1.4;`;
+  el.innerHTML = `
+    <button id="btn-bgm" onclick="onToggleBgm()" style="${btnStyle}">🎵</button>
+    <button id="btn-sfx" onclick="onToggleSfx()" style="${btnStyle}">🔊</button>
+  `;
+}
+function onToggleBgm() {
+  const on = Audio.toggleBgm();
+  const b = document.getElementById('btn-bgm');
+  if (b) { b.textContent = on ? '🎵' : '🔇'; b.style.opacity = on ? '1' : '.4'; }
+  if (on) {
+    const inBattle = !document.getElementById('screen-battle').classList.contains('hidden');
+    const inMatch  = !document.getElementById('screen-match').classList.contains('hidden');
+    Audio.bgm(inBattle ? 'battle' : inMatch ? 'match' : 'title');
+  }
+}
+function onToggleSfx() {
+  const on = Audio.toggleSfx();
+  const b = document.getElementById('btn-sfx');
+  if (b) { b.textContent = on ? '🔊' : '🔈'; b.style.opacity = on ? '1' : '.4'; }
+}
+
+</script>
+</body>
+</html>
