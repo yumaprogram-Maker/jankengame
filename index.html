@@ -1562,8 +1562,11 @@ async function doMatchmaking() {
     enemyName = foundRoom.host;
     setMatchUI('found', enemyName);
 
-    // ゲストのデッキをルームに書き込む
-    await set(ref(db, 'rooms/' + roomId + '/guestDeck'), playerDeck);
+    // ゲストのデッキと名前をルームに書き込む
+    await update(ref(db, 'rooms/' + roomId), {
+      guestDeck: playerDeck,
+      guest: playerName
+    });
 
     // ホストがバトル開始フラグを立てるのを待つ
     listenRoom(() => setMatchUI('ready', enemyName));
@@ -2265,7 +2268,7 @@ function resolveHandBattle() {
       eEmoji.classList.add('winner'); pEmoji.classList.add('loser');
     }
 
-    let baseDmg = 10;
+    let baseDmg = 20;
     let playerTookDmg = 0, enemyTookDmg = 0;
 
     if (result === 'draw') {
