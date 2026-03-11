@@ -1525,6 +1525,8 @@ let myRole = null;      // 'host' or 'guest'
 let roomId = null;
 let roomRef = null;
 let roomListener = null;
+let _matchingActive = false;   // 二重マッチング防止フラグ
+let _battleStarted  = false;   // バトル開始の二重発火防止
 
 function waitForFirebase(cb) {
   if (window._FB_READY) { cb(); return; }
@@ -1532,6 +1534,8 @@ function waitForFirebase(cb) {
 }
 
 function startMatchmaking() {
+  _matchingActive = true;
+  _battleStarted  = false;
   showScreen('match');
   setMatchUI('waiting');
   waitForFirebase(doMatchmaking);
@@ -1539,6 +1543,7 @@ function startMatchmaking() {
 
 function setMatchUI(state, opponentName) {
   const el = document.getElementById('match-content');
+  const safe = opponentName ? opponentName.replace(/</g,'&lt;') : '';
   if (state === 'waiting') {
     el.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
@@ -1551,14 +1556,14 @@ function setMatchUI(state, opponentName) {
     el.innerHTML = `
       <div class="match-found">
         <div class="match-vs">OPPONENT FOUND</div>
-        <div class="match-opponent">${opponentName}</div>
-        <div class="match-waiting">バトル開始を待っています...</div>
+        <div class="match-opponent">${safe}</div>
+        <div class="match-waiting">バトル開始を待っています<span class="waiting-dots"></span></div>
       </div>`;
   } else if (state === 'ready') {
     el.innerHTML = `
       <div class="match-found">
         <div class="match-vs">OPPONENT FOUND</div>
-        <div class="match-opponent">${opponentName}</div>
+        <div class="match-opponent">${safe}</div>
         <div class="match-waiting" style="margin-bottom:16px;">バトルを開始しますか？</div>
         <button class="btn btn-primary" onclick="startBattle()" style="max-width:200px;">BATTLE START!</button>
       </div>`;
@@ -1566,46 +1571,67 @@ function setMatchUI(state, opponentName) {
 }
 
 async function doMatchmaking() {
-  const { db, ref, set, get, onValue, push, remove, update, serverTimestamp } = window._FB;
+  if (!_matchingActive) return;
+  const { db, ref, set, get, onValue, off, push, remove, update, serverTimestamp } = window._FB;
 
-  // 待機中ルームを検索
-  const lobbyRef = ref(db, 'lobby');
-  const snap = await get(lobbyRef);
+  // ── 古いゴミルームを掃除（60秒以上前のwaitingルームを除外） ──
+  const STALE_MS = 60000;
+
+  // 待機中ロビーを検索
+  const lobbySnap = await get(ref(db, 'lobby'));
   let foundRoom = null;
 
-  if (snap.exists()) {
-    snap.forEach(child => {
+  if (lobbySnap.exists()) {
+    const now = Date.now();
+    lobbySnap.forEach(child => {
+      if (foundRoom) return;
       const v = child.val();
-      if (!v.guest && v.host && !foundRoom) {
-        foundRoom = { id: child.key, host: v.host };
-      }
+      // 自分が作ったルームには入らない
+      if (v.host === playerName) return;
+      // guestが既に埋まっているルームはスキップ
+      if (v.guest) return;
+      // createdAtが古すぎるルームはスキップ（serverTimestampは数値で返る）
+      if (v.createdAt && (now - v.createdAt) > STALE_MS) return;
+      foundRoom = { id: child.key, host: v.host };
     });
   }
 
+  if (!_matchingActive) return;  // キャンセルされていたら中断
+
   if (foundRoom) {
-    // ゲストとして参加
-    myRole = 'guest';
+    // ── ゲストとして参加 ──
+    myRole  = 'guest';
     roomId  = foundRoom.id;
     roomRef = ref(db, 'rooms/' + roomId);
-
-    await update(ref(db, 'lobby/' + roomId), {
-      guest: playerName
-    });
-
     enemyName = foundRoom.host;
+
+    // ロビーにゲスト名を書き込み（先取り：他のゲストをブロック）
+    await update(ref(db, 'lobby/' + roomId), { guest: playerName });
+
+    // ルームが実際に存在するか確認
+    const roomSnap = await get(roomRef);
+    if (!roomSnap.exists() || !_matchingActive) {
+      // ルームが消えていたらホストとして再試行
+      roomId = null; roomRef = null; myRole = null;
+      doMatchmaking();
+      return;
+    }
+
     setMatchUI('found', enemyName);
 
     // ゲストのデッキと名前をルームに書き込む
-    await update(ref(db, 'rooms/' + roomId), {
-      guestDeck: playerDeck,
-      guest: playerName
+    await update(roomRef, { guestDeck: playerDeck, guest: playerName });
+
+    // ホストが 'battleReady' フラグを立てるのを待つ
+    _attachRoomListener((data) => {
+      if (!_matchingActive || _battleStarted) return;
+      if (data.status === 'battleReady') {
+        setMatchUI('ready', enemyName);
+      }
     });
 
-    // ホストがバトル開始フラグを立てるのを待つ
-    listenRoom(() => setMatchUI('ready', enemyName));
-
   } else {
-    // ホストとして新ルーム作成
+    // ── ホストとして新ルーム作成 ──
     myRole = 'host';
     const newRoomRef = push(ref(db, 'rooms'));
     roomId  = newRoomRef.key;
@@ -1617,39 +1643,51 @@ async function doMatchmaking() {
       status: 'waiting',
       createdAt: serverTimestamp()
     });
-
     await set(ref(db, 'lobby/' + roomId), {
       host: playerName,
       createdAt: serverTimestamp()
     });
 
-    // ゲストが来たら通知
-    listenRoom((data) => {
-      if (data.guestDeck) {
-        enemyName = data.guest || 'OPPONENT';
-        // ロビーから削除してバトル状態へ
+    // ゲストが来てデッキを書き込んだら検知
+    _attachRoomListener((data) => {
+      if (!_matchingActive || _battleStarted) return;
+      if (data.guestDeck && data.guest) {
+        enemyName = data.guest;
+        // ロビーから削除
         remove(ref(db, 'lobby/' + roomId));
+        // ゲスト側に「準備完了」を伝える
+        update(roomRef, { status: 'battleReady' });
         setMatchUI('ready', enemyName);
       }
     });
   }
 }
 
-function listenRoom(cb) {
+// roomListenerを安全にアタッチ（既存リスナーを先に解除）
+function _attachRoomListener(cb) {
+  _detachRoomListener();
   const { onValue } = window._FB;
   roomListener = onValue(roomRef, snap => {
     if (snap.exists()) cb(snap.val());
   });
 }
 
+function _detachRoomListener() {
+  if (roomListener && roomRef) {
+    try { window._FB.off(roomRef, roomListener); } catch(e) {}
+    roomListener = null;
+  }
+}
+
 function cancelMatch() {
-  const { db, ref, remove } = window._FB;
-  if (roomId) {
+  _matchingActive = false;
+  _detachRoomListener();
+  if (roomId && window._FB) {
+    const { db, ref, remove } = window._FB;
     remove(ref(db, 'lobby/' + roomId));
     remove(ref(db, 'rooms/' + roomId));
-    roomId = null; roomRef = null; myRole = null;
   }
-  if (roomListener) { window._FB.off(roomRef); roomListener = null; }
+  roomId = null; roomRef = null; myRole = null;
   showScreen('deck');
 }
 
@@ -1657,6 +1695,35 @@ function cancelMatch() {
 // BATTLE INIT  (online version)
 // ============================================================
 async function startBattle() {
+  if (_battleStarted) return;
+  _battleStarted = true;
+  _matchingActive = false;
+  _detachRoomListener();
+
+  const { db, ref, get, update } = window._FB;
+
+  // 相手のデッキをFirebaseから確実に取得（リトライあり）
+  let roomData = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const snap = await get(ref(db, 'rooms/' + roomId));
+    if (snap.exists()) { roomData = snap.val(); break; }
+    await new Promise(r => setTimeout(r, 400));
+  }
+  if (!roomData) {
+    alert('接続エラー: ルームデータを取得できませんでした。もう一度お試しください。');
+    _battleStarted = false;
+    cancelMatch();
+    return;
+  }
+
+  const enemyDeck = myRole === 'host' ? roomData.guestDeck : roomData.hostDeck;
+  if (!enemyDeck || enemyDeck.length === 0) {
+    alert('接続エラー: 相手のデッキを取得できませんでした。もう一度お試しください。');
+    _battleStarted = false;
+    cancelMatch();
+    return;
+  }
+
   // init battle state
   battle.playerHP = 100; battle.enemyHP = 100;
   battle.turn = 1;
@@ -1666,15 +1733,14 @@ async function startBattle() {
   battle.playerDrawDmg = 0; battle.enemyDrawDmg = 0;
   battle.playerReflect = 0; battle.enemyReflect = 0;
   battle.playerExtraDraw = 0; battle.enemyExtraDraw = 0;
+  battle.playerCounterMultiplier = 0; battle.enemyCounterMultiplier = 0;
+  battle.playerMartyrdom = false; battle.enemyMartyrdom = false;
+  battle.playerDoubleAllDamage = false; battle.enemyDoubleAllDamage = false;
+  battle.playerPeekReselect = false; battle.enemyPeekReselect = false;
+  battle.lastUsedPlayerCards = []; battle.lastUsedEnemyCards = [];
   battle.playerHand = []; battle.enemyHand = [];
   battle.playerDeckRemain = shuffle([...playerDeck]);
-
-  // 相手のデッキをFirebaseから取得
-  const { db, ref, get, set, update } = window._FB;
-  const snap = await get(ref(db, 'rooms/' + roomId));
-  const roomData = snap.val();
-  const enemyDeck = myRole === 'host' ? roomData.guestDeck : roomData.hostDeck;
-  battle.enemyDeckRemain = shuffle([...enemyDeck]);
+  battle.enemyDeckRemain  = shuffle([...enemyDeck]);
 
   // バトル開始を通知
   await update(ref(db, 'rooms/' + roomId), { status: 'battle', turn: 1 });
@@ -1995,7 +2061,8 @@ function confirmPeekAction() {
 // 自分の行動をFirebaseに書き込み、相手の行動を待つ
 async function submitMyAction() {
   const { db, ref, set, onValue, off } = window._FB;
-  const myKey   = myRole;          // 'host' or 'guest'
+  const myKey    = myRole;
+  const enemyKey = myRole === 'host' ? 'guest' : 'host';
   const turnPath = `rooms/${roomId}/turns/${battle.turn}`;
 
   const myAction = {
@@ -2003,21 +2070,36 @@ async function submitMyAction() {
     cards: battle.selectedCards.map(k => k.split('_')[0])
   };
 
-  await set(ref(db, `${turnPath}/${myKey}`), myAction);
+  // 自分のアクションを書き込む（リトライあり）
+  let writeOk = false;
+  for (let i = 0; i < 3; i++) {
+    try {
+      await set(ref(db, `${turnPath}/${myKey}`), myAction);
+      writeOk = true;
+      break;
+    } catch(e) {
+      await new Promise(r => setTimeout(r, 500));
+    }
+  }
+  if (!writeOk) {
+    setArenaStatus('⚠️ 送信失敗。再接続してください。');
+    return;
+  }
 
-  // 相手の行動を監視
-  const enemyKey  = myRole === 'host' ? 'guest' : 'host';
-  const enemyRef  = ref(db, `${turnPath}/${enemyKey}`);
+  // 相手のアクションを監視（タイムアウト60秒）
+  const enemyRef = ref(db, `${turnPath}/${enemyKey}`);
+  let resolved = false;
+  let timeoutId = null;
+
   const unsubscribe = onValue(enemyRef, snap => {
-    if (!snap.exists()) return;
-    off(enemyRef);  // 一度だけ受け取ったらリスナー解除
+    if (!snap.exists() || resolved) return;
+    resolved = true;
+    clearTimeout(timeoutId);
+    try { off(enemyRef, unsubscribe); } catch(e) {}
 
     const enemyAction = snap.val();
     battle.enemySelectedHand  = enemyAction.hand;
     battle.enemySelectedCards = enemyAction.cards || [];
-
-    // enemyHandのインデックス合わせ（表示用に使う分だけ）
-    // cards配列はcard idの配列として使う（AI版と同様）
 
     // サードアイ：相手の手を盗み見して再選択
     if (battle.playerPeekReselect) {
@@ -2026,6 +2108,16 @@ async function submitMyAction() {
       resolveRound();
     }
   });
+
+  // タイムアウト処理（60秒で相手切断扱い）
+  timeoutId = setTimeout(() => {
+    if (resolved) return;
+    resolved = true;
+    try { off(enemyRef, unsubscribe); } catch(e) {}
+    setArenaStatus('⚠️ 相手との接続が切れました。');
+    document.getElementById('battle-status-msg').textContent = '相手が応答しませんでした。';
+    showHandSelectArea(true);
+  }, 60000);
 }
 
 function showHandSelectArea(show) {
@@ -2590,6 +2682,9 @@ function endBattle() {
   result.classList.add('show');
 
   // Firebase クリーンアップ
+  _detachRoomListener();
+  _battleStarted = false;
+  _matchingActive = false;
   if (roomId && window._FB) {
     const { db, ref, remove } = window._FB;
     remove(ref(db, 'rooms/' + roomId));
