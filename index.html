@@ -1681,38 +1681,73 @@ function showDeckInfo(msg) {
   document.getElementById('deck-info-text').textContent = msg;
 }
 
-// ランダムに16枚・コスト200以内でデッキ選択
+// ランダムに16枚・コスト200以内でデッキ選択（必ず16枚を保証）
 function randomDeck() {
   deckSelection = {};
-  const pool = shuffle([...CARD_DB]);
   let cost = 0;
   let count = 0;
-  // 最大試行: カードプールを繰り返しながら16枚になるまで追加
-  let tries = 0;
-  while (count < 16 && tries < 500) {
-    tries++;
-    const card = pool[tries % pool.length];
-    // 1種類のカードは最大2枚まで
-    const cur = deckSelection[card.id] || 0;
-    if (cur >= 2) continue;
-    if (cost + card.cost > 200) continue;
+
+  // フェーズ1: 全カードをシャッフルして1枚ずつ試す（コスト制約内で）
+  const pool = shuffle([...CARD_DB]);
+  for (const card of pool) {
     if (count >= 16) break;
-    deckSelection[card.id] = cur + 1;
+    if ((deckSelection[card.id] || 0) >= 2) continue;
+    if (cost + card.cost > 200) continue;
+    deckSelection[card.id] = (deckSelection[card.id] || 0) + 1;
     cost += card.cost;
     count++;
   }
-  // もし16枚に足りなければBランク(cost5)で埋める
+
+  // フェーズ2: まだ16枚未満なら、2枚目として追加可能なカードを試す
   if (count < 16) {
-    const bCards = shuffle(CARD_DB.filter(c => c.rank === 'B'));
+    const pool2 = shuffle([...CARD_DB]);
+    for (const card of pool2) {
+      if (count >= 16) break;
+      if ((deckSelection[card.id] || 0) >= 2) continue;
+      if (cost + card.cost > 200) continue;
+      deckSelection[card.id] = (deckSelection[card.id] || 0) + 1;
+      cost += card.cost;
+      count++;
+    }
+  }
+
+  // フェーズ3: それでも足りなければ最安Bランクで強制補完（コスト制限を一時的に緩和）
+  if (count < 16) {
+    const bCards = [...CARD_DB.filter(c => c.rank === 'B')].sort((a,b) => a.cost - b.cost);
     for (const card of bCards) {
-      while (count < 16 && cost + card.cost <= 200 && (deckSelection[card.id]||0) < 2) {
-        deckSelection[card.id] = (deckSelection[card.id]||0) + 1;
+      while (count < 16 && (deckSelection[card.id] || 0) < 2 && cost + card.cost <= 200) {
+        deckSelection[card.id] = (deckSelection[card.id] || 0) + 1;
         cost += card.cost;
         count++;
       }
       if (count >= 16) break;
     }
+    // 最終手段: コスト制限を無視して16枚に（コストが200を超える場合は他のカードを削除して調整）
+    if (count < 16) {
+      const cheapest = [...CARD_DB].sort((a, b) => a.cost - b.cost);
+      for (const card of cheapest) {
+        while (count < 16 && (deckSelection[card.id] || 0) < 2) {
+          // コスト超過する場合は高コストのカードを1枚減らして調整
+          while (cost + card.cost > 200 && count > 0) {
+            const expensive = Object.entries(deckSelection)
+              .map(([id, cnt]) => ({ id, cnt, cost: getCard(id)?.cost || 0 }))
+              .sort((a, b) => b.cost - a.cost)[0];
+            if (!expensive) break;
+            deckSelection[expensive.id]--;
+            cost -= expensive.cost;
+            count--;
+            if (deckSelection[expensive.id] === 0) delete deckSelection[expensive.id];
+          }
+          if (cost + card.cost > 200) break;
+          deckSelection[card.id] = (deckSelection[card.id] || 0) + 1;
+          cost += card.cost;
+          count++;
+        }
+        if (count >= 16) break;
+      }
+    }
   }
+
   Audio.sfx('click');
   renderCardGrid();
   updateDeckCostDisplay();
@@ -1881,6 +1916,44 @@ function _attachRoomListener(cb) {
   });
 }
 
+let _battleEndListener = null;
+let _battleEndTriggered = false;
+
+// バトル終了フラグを監視し、相手が先に検知した場合も結果画面を出す
+function _listenForBattleEnd() {
+  if (!roomId || !window._FB) return;
+  _battleEndTriggered = false;
+  const { db, ref, onValue } = window._FB;
+  const endRef = ref(db, 'rooms/' + roomId + '/battleEnd');
+  _battleEndListener = onValue(endRef, snap => {
+    if (!snap.exists() || _battleEndTriggered) return;
+    const data = snap.val();
+    // 結果画面がまだ表示されていない場合のみ処理
+    const resultEl = document.getElementById('battle-result');
+    if (resultEl && !resultEl.classList.contains('show')) {
+      _battleEndTriggered = true;
+      // hostHP/guestHP から自分と相手のHPを復元
+      if (typeof data.hostHP === 'number' && typeof data.guestHP === 'number') {
+        battle.playerHP = myRole === 'host' ? data.hostHP  : data.guestHP;
+        battle.enemyHP  = myRole === 'host' ? data.guestHP : data.hostHP;
+        updateHPDisplay();
+      }
+      hideDamageBreakdown();
+      endBattle();
+    }
+  });
+}
+
+function _detachBattleEndListener() {
+  if (_battleEndListener && roomId && window._FB) {
+    try {
+      const { db, ref, off } = window._FB;
+      off(ref(db, 'rooms/' + roomId + '/battleEnd'), _battleEndListener);
+    } catch(e) {}
+    _battleEndListener = null;
+  }
+}
+
 function _detachRoomListener() {
   if (roomListener && roomRef) {
     try { window._FB.off(roomRef, roomListener); } catch(e) {}
@@ -1979,6 +2052,10 @@ async function startBattle() {
   showGearBtn(true);
   document.getElementById('player-name-display').textContent = playerName.substring(0,8);
   document.getElementById('enemy-name-display').textContent = enemyName.substring(0,8);
+
+  // バトル終了フラグのリスナーを設定（相手が先に終了を検知した場合に自分も結果画面を表示）
+  _listenForBattleEnd();
+
   startTurn();
 }
 
@@ -3238,10 +3315,21 @@ function resolveHandBattle() {
     showRoundResult(result, ph, eh, playerTookDmg, enemyTookDmg);
     if (playerTookDmg > 0) { flashScreen('flash-red'); Audio.sfx('damage'); }
 
+    // バトル終了判定：HP0になったらFirebaseにフラグを書き込み両者に通知
+    const isBattleOver = battle.playerHP <= 0 || battle.enemyHP <= 0;
+    if (isBattleOver && roomId && window._FB) {
+      const { db, ref, set } = window._FB;
+      const hostHP  = myRole === 'host' ? battle.playerHP : battle.enemyHP;
+      const guestHP = myRole === 'host' ? battle.enemyHP  : battle.playerHP;
+      set(ref(db, 'rooms/' + roomId + '/battleEnd'), {
+        hostHP, guestHP, turn: battle.turn, ts: Date.now()
+      }).catch(() => {});
+    }
+
     // タップで閉じる待機状態にする
     waitDamageBreakdownTap(() => {
       hideDamageBreakdown();
-      if (battle.playerHP <= 0 || battle.enemyHP <= 0) { endBattle(); }
+      if (isBattleOver) { endBattle(); }
       else { battle.turn++; startTurn(); }
     });
   }, 1600);
@@ -3451,14 +3539,27 @@ function endBattle() {
     addLog('result-lose', `💀 DEFEATED - ${enemyName} に敗れた...`, `全${battle.turn}ターン`);
   }
   result.classList.add('show');
-
-  // Firebase クリーンアップ
+  _battleEndTriggered = true;
+  _detachBattleEndListener();
+  // 両者が確認した後にルームを削除する
   _detachRoomListener();
   _battleStarted = false;
   _matchingActive = false;
+
   if (roomId && window._FB) {
-    const { db, ref, remove } = window._FB;
-    remove(ref(db, 'rooms/' + roomId));
+    const { db, ref, set, remove } = window._FB;
+    const myKey = myRole || 'host';
+    // 自分の結果確認フラグを書き込む（相手が結果を受け取れるように遅延削除）
+    set(ref(db, `rooms/${roomId}/battleResult/${myKey}`), { done: true, ts: Date.now() })
+      .catch(() => {});
+    // 10秒後にルームを削除（両者が結果画面を確認する時間を確保）
+    setTimeout(() => {
+      if (window._FB) {
+        remove(ref(db, 'rooms/' + roomId)).catch(() => {});
+      }
+      roomId = null; roomRef = null; myRole = null;
+    }, 10000);
+  } else {
     roomId = null; roomRef = null; myRole = null;
   }
 }
