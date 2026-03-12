@@ -878,6 +878,50 @@ body {
   100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
 }
 
+/* ===== DAMAGE BREAKDOWN PANEL ===== */
+#dmg-breakdown-panel {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  z-index: 58; pointer-events: none;
+  display: flex; flex-direction: column; gap: 4px;
+  align-items: center; min-width: 260px;
+  opacity: 0; transition: opacity 0.25s;
+}
+#dmg-breakdown-panel.show { opacity: 1; }
+.dmg-breakdown-title {
+  font-family: 'Orbitron', monospace; font-size: 10px;
+  letter-spacing: 2px; color: var(--text-dim); margin-bottom: 2px;
+}
+.dmg-step {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'Orbitron', monospace; font-weight: 700;
+  font-size: 13px; white-space: nowrap;
+  animation: stepPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes stepPop {
+  0% { opacity:0; transform: scale(0.6) translateX(-10px); }
+  100% { opacity:1; transform: scale(1) translateX(0); }
+}
+.dmg-step-icon { font-size: 18px; line-height:1; }
+.dmg-step-label { color: var(--text-dim); font-size: 10px; }
+.dmg-step-val { font-size: 15px; font-weight: 900; }
+.dmg-step-val.plus  { color: #ff8c00; text-shadow: 0 0 8px #ff8c00; }
+.dmg-step-val.minus { color: #00f5ff; text-shadow: 0 0 8px #00f5ff; }
+.dmg-step-val.base  { color: #aaaacc; }
+.dmg-step-val.total { color: #ffd600; font-size: 20px; text-shadow: 0 0 12px #ffd600; }
+.dmg-step-val.martyrdom { color: #ff006e; text-shadow: 0 0 12px #ff006e; }
+.dmg-divider {
+  width: 200px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 2px 0;
+}
+.dmg-total-row {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'Orbitron', monospace; font-weight: 900;
+  font-size: 18px;
+  animation: stepPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.dmg-total-row .dmg-total-label { font-size: 11px; color: var(--text-dim); }
+
 /* ===== FLASH ===== */
 .screen-flash {
   position: fixed; inset: 0; z-index: 80;
@@ -1132,6 +1176,9 @@ body {
 <div class="card-reveal-panel" id="card-reveal-panel" style="display:none;">
   <div class="reveal-cards" id="reveal-cards-content"></div>
 </div>
+
+<!-- DAMAGE BREAKDOWN PANEL -->
+<div id="dmg-breakdown-panel"></div>
 
 <!-- ROUND RESULT POPUP -->
 <div class="round-result-popup" id="round-result-popup">
@@ -2836,101 +2883,185 @@ function resolveHandBattle() {
     }
 
     let baseDmg = 20;
-    let playerTookDmg = 0, enemyTookDmg = 0;
 
     // martyrdom: force loss and 3x damage for that player
     let playerForcedLose = battle.playerMartyrdom;
-    let enemyForcedLose = battle.enemyMartyrdom;
+    let enemyForcedLose  = battle.enemyMartyrdom;
 
     // Recalculate result if martyrdom active
     let effectiveResult = result;
     if (playerForcedLose && !enemyForcedLose) effectiveResult = 'enemy';
     else if (enemyForcedLose && !playerForcedLose) effectiveResult = 'player';
 
+    // ── ダメージ計算（ステップを記録しつつ） ──
+    let playerTookDmg = 0, enemyTookDmg = 0;
+    // breakdown: { target:'player'|'enemy', icon, label, delta, type }
+    const breakdown = [];
+
     if (effectiveResult === 'draw') {
-      let dmg = 5;
+      let baseDraw = 5;
       let pDmgMult = (battle.playerDoubleAllDamage || battle.enemyDoubleAllDamage) ? 2 : 1;
       let eDmgMult = pDmgMult;
-      if (!battle.playerShield) playerTookDmg = Math.max(0, dmg - battle.playerDmgReduce) * pDmgMult;
-      if (!battle.enemyShield) enemyTookDmg = Math.max(0, dmg - battle.enemyDmgReduce) * eDmgMult;
-      if (battle.playerDrawDmg) enemyTookDmg += battle.playerDrawDmg;
-      if (battle.enemyDrawDmg) playerTookDmg += battle.enemyDrawDmg;
+
+      if (!battle.playerShield) {
+        let d = Math.max(0, baseDraw - battle.playerDmgReduce) * pDmgMult;
+        if (d > 0) {
+          breakdown.push({ target:'player', icon:'🤜', label:'あいこ基本', delta:-d, type:'base' });
+          playerTookDmg += d;
+        }
+      } else {
+        breakdown.push({ target:'player', icon:'🛡️', label:'シールド', delta:0, type:'minus' });
+      }
+      if (battle.playerDmgReduce > 0 && !battle.playerShield) {
+        breakdown.push({ target:'player', icon:'🔷', label:'被ダメ軽減', delta:+battle.playerDmgReduce, type:'minus' });
+      }
+      if (!battle.enemyShield) {
+        let d = Math.max(0, baseDraw - battle.enemyDmgReduce) * eDmgMult;
+        if (d > 0) {
+          breakdown.push({ target:'enemy', icon:'🤜', label:'あいこ基本', delta:-d, type:'base' });
+          enemyTookDmg += d;
+        }
+      } else {
+        breakdown.push({ target:'enemy', icon:'🛡️', label:'シールド', delta:0, type:'minus' });
+      }
+      if (battle.enemyDmgReduce > 0 && !battle.enemyShield) {
+        breakdown.push({ target:'enemy', icon:'🔷', label:'被ダメ軽減', delta:+battle.enemyDmgReduce, type:'minus' });
+      }
+      if (pDmgMult === 2) {
+        breakdown.push({ target:'player', icon:'⚠️', label:'ダブルリスク×2', delta:0, type:'plus' });
+        breakdown.push({ target:'enemy', icon:'⚠️', label:'ダブルリスク×2', delta:0, type:'plus' });
+      }
+      if (battle.playerDrawDmg) {
+        breakdown.push({ target:'enemy', icon:'⚔️', label:'追加ダメ', delta:-battle.playerDrawDmg, type:'plus' });
+        enemyTookDmg += battle.playerDrawDmg;
+      }
+      if (battle.enemyDrawDmg) {
+        breakdown.push({ target:'player', icon:'⚔️', label:'追加ダメ', delta:-battle.enemyDrawDmg, type:'plus' });
+        playerTookDmg += battle.enemyDrawDmg;
+      }
+
     } else if (effectiveResult === 'player') {
-      let dmg = baseDmg + battle.playerDmgUp;
-      if (battle.enemyMartyrdom) dmg *= 3;
-      if (battle.playerDoubleAllDamage || battle.enemyDoubleAllDamage) dmg *= 2;
-      if (!battle.enemyShield) enemyTookDmg = Math.max(0, dmg - battle.enemyDmgReduce);
+      // 相手(enemy)がダメージを受ける
+      let dmg = baseDmg;
+      breakdown.push({ target:'enemy', icon:'⚔️', label:'基本ダメ', delta:-dmg, type:'base' });
+      if (battle.playerDmgUp > 0) {
+        breakdown.push({ target:'enemy', icon:'💪', label:'攻撃強化', delta:-battle.playerDmgUp, type:'plus' });
+        dmg += battle.playerDmgUp;
+      }
+      if (battle.enemyMartyrdom) {
+        const prev = dmg;
+        dmg *= 3;
+        breakdown.push({ target:'enemy', icon:'💀', label:'殉教×3倍', delta:-(dmg - prev), type:'martyrdom' });
+      }
+      if (battle.playerDoubleAllDamage || battle.enemyDoubleAllDamage) {
+        const prev = dmg;
+        dmg *= 2;
+        breakdown.push({ target:'enemy', icon:'⚠️', label:'ダブルリスク×2', delta:-(dmg - prev), type:'plus' });
+      }
+      if (battle.enemyDmgReduce > 0 && !battle.enemyShield) {
+        breakdown.push({ target:'enemy', icon:'🔷', label:'被ダメ軽減', delta:+battle.enemyDmgReduce, type:'minus' });
+      }
+      if (!battle.enemyShield) {
+        enemyTookDmg = Math.max(0, dmg - battle.enemyDmgReduce);
+      } else {
+        breakdown.push({ target:'enemy', icon:'🛡️', label:'シールド発動', delta:0, type:'minus' });
+        enemyTookDmg = 0;
+      }
+
     } else {
-      let dmg = baseDmg + battle.enemyDmgUp;
-      if (battle.playerMartyrdom) dmg *= 3;
-      if (battle.playerDoubleAllDamage || battle.enemyDoubleAllDamage) dmg *= 2;
-      if (!battle.playerShield) playerTookDmg = Math.max(0, dmg - battle.playerDmgReduce);
+      // プレイヤーがダメージを受ける
+      let dmg = baseDmg;
+      breakdown.push({ target:'player', icon:'⚔️', label:'基本ダメ', delta:-dmg, type:'base' });
+      if (battle.enemyDmgUp > 0) {
+        breakdown.push({ target:'player', icon:'💪', label:'相手の攻撃強化', delta:-battle.enemyDmgUp, type:'plus' });
+        dmg += battle.enemyDmgUp;
+      }
+      if (battle.playerMartyrdom) {
+        const prev = dmg;
+        dmg *= 3;
+        breakdown.push({ target:'player', icon:'💀', label:'殉教×3倍', delta:-(dmg - prev), type:'martyrdom' });
+      }
+      if (battle.playerDoubleAllDamage || battle.enemyDoubleAllDamage) {
+        const prev = dmg;
+        dmg *= 2;
+        breakdown.push({ target:'player', icon:'⚠️', label:'ダブルリスク×2', delta:-(dmg - prev), type:'plus' });
+      }
+      if (battle.playerDmgReduce > 0 && !battle.playerShield) {
+        breakdown.push({ target:'player', icon:'🔷', label:'被ダメ軽減', delta:+battle.playerDmgReduce, type:'minus' });
+      }
+      if (!battle.playerShield) {
+        playerTookDmg = Math.max(0, dmg - battle.playerDmgReduce);
+      } else {
+        breakdown.push({ target:'player', icon:'🛡️', label:'シールド発動', delta:0, type:'minus' });
+        playerTookDmg = 0;
+      }
     }
 
+    // HP適用（まず基本ダメ）
     battle.playerHP = Math.max(0, battle.playerHP - playerTookDmg);
-    battle.enemyHP = Math.max(0, battle.enemyHP - enemyTookDmg);
+    battle.enemyHP  = Math.max(0, battle.enemyHP  - enemyTookDmg);
     updateHPDisplay();
 
-    // ── 発動したカードを手札から除去（バトル中は再ドロー不可） ──
+    // ── 発動したカードを手札から除去 ──
     const usedHandIndices = battle.selectedCards.map(k => parseInt(k.split('_')[1])).sort((a,b)=>b-a);
     usedHandIndices.forEach(idx => {
-      if (idx >= 0 && idx < battle.playerHand.length) {
-        battle.playerHand.splice(idx, 1);
-      }
+      if (idx >= 0 && idx < battle.playerHand.length) battle.playerHand.splice(idx, 1);
     });
     battle.enemySelectedCards.forEach(id => {
       const pos = battle.enemyHand.indexOf(id);
-      if (pos !== -1) { battle.enemyHand.splice(pos, 1); }
+      if (pos !== -1) battle.enemyHand.splice(pos, 1);
     });
 
-    // リフレクト処理
+    // ── リフレクト処理 ──
     if (battle.playerReflect && playerTookDmg > 0) {
       const rd = Math.floor(playerTookDmg * battle.playerReflect);
       battle.enemyHP = Math.max(0, battle.enemyHP - rd);
-      spawnDmgNumber('-' + rd, '#ff8c00', false);
+      breakdown.push({ target:'enemy', icon:'🔁', label:`反射 ${Math.round(battle.playerReflect*100)}%`, delta:-rd, type:'plus' });
       updateHPDisplay();
     }
     if (battle.enemyReflect && enemyTookDmg > 0) {
       const rd = Math.floor(enemyTookDmg * battle.enemyReflect);
       battle.playerHP = Math.max(0, battle.playerHP - rd);
+      breakdown.push({ target:'player', icon:'🔁', label:`反射 ${Math.round(battle.enemyReflect*100)}%`, delta:-rd, type:'plus' });
       updateHPDisplay();
     }
 
-    // counterMultiplier: 受けたダメージ×倍率で相手に返す
+    // ── counterMultiplier ──
     if (battle.playerCounterMultiplier && playerTookDmg > 0) {
       const cd = Math.floor(playerTookDmg * battle.playerCounterMultiplier);
       battle.enemyHP = Math.max(0, battle.enemyHP - cd);
-      spawnDmgNumber('-' + cd + '🔁', '#ff8c00', false);
+      breakdown.push({ target:'enemy', icon:'🔁', label:`カウンター×${battle.playerCounterMultiplier}`, delta:-cd, type:'plus' });
       updateHPDisplay();
     }
     if (battle.enemyCounterMultiplier && enemyTookDmg > 0) {
       const cd = Math.floor(enemyTookDmg * battle.enemyCounterMultiplier);
       battle.playerHP = Math.max(0, battle.playerHP - cd);
-      spawnDmgNumber('-' + cd + '🔁', '#ff8c00', true);
+      breakdown.push({ target:'player', icon:'🔁', label:`カウンター×${battle.enemyCounterMultiplier}`, delta:-cd, type:'plus' });
       updateHPDisplay();
     }
 
-    // martyrdom: 生存していれば受けたダメージ×2を相手に返す
+    // ── 殉教返し：発動時のHPではなく、ダメージを受ける直前のHP（受けたダメージを差し引く前）を見て判定 ──
+    // 「生存していれば」= 最終的なHPが0より大きい場合に返す
     if (battle.playerMartyrdom && battle.playerHP > 0 && playerTookDmg > 0) {
       const retDmg = playerTookDmg * 2;
       battle.enemyHP = Math.max(0, battle.enemyHP - retDmg);
-      spawnDmgNumber('殉教 -' + retDmg, '#ff006e', false);
+      breakdown.push({ target:'enemy', icon:'💀', label:'殉教 2倍返し', delta:-retDmg, type:'martyrdom' });
       updateHPDisplay();
     }
     if (battle.enemyMartyrdom && battle.enemyHP > 0 && enemyTookDmg > 0) {
       const retDmg = enemyTookDmg * 2;
       battle.playerHP = Math.max(0, battle.playerHP - retDmg);
-      spawnDmgNumber('殉教 -' + retDmg, '#ff006e', true);
+      breakdown.push({ target:'player', icon:'💀', label:'殉教 2倍返し', delta:-retDmg, type:'martyrdom' });
       updateHPDisplay();
     }
 
     // lastUsedCards を記録
     battle.lastUsedPlayerCards = battle.selectedCards.map(k => k.split('_')[0]);
-    battle.lastUsedEnemyCards = [...battle.enemySelectedCards];
+    battle.lastUsedEnemyCards  = [...battle.enemySelectedCards];
 
     // Reset turn buffs
     battle.playerDmgUp = 0; battle.playerDmgReduce = 0; battle.playerShield = false;
-    battle.enemyDmgUp = 0; battle.enemyDmgReduce = 0; battle.enemyShield = false;
+    battle.enemyDmgUp  = 0; battle.enemyDmgReduce  = 0; battle.enemyShield  = false;
     battle.playerForced = null; battle.enemyForced = null;
     battle.playerDrawDmg = 0; battle.enemyDrawDmg = 0;
     battle.playerReflect = 0; battle.enemyReflect = 0;
@@ -2942,15 +3073,135 @@ function resolveHandBattle() {
     // ── HPをFirebaseに書き込んで同期 ──
     _syncMyHPToFirebase();
 
+    // ── ダメージ内訳演出 ──
+    showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveResult);
+
     showRoundResult(result, ph, eh, playerTookDmg, enemyTookDmg);
-    if (playerTookDmg > 0) { flashScreen('flash-red'); spawnDmgNumber('-' + playerTookDmg, '#ff006e', true); Audio.sfx('damage'); }
-    if (enemyTookDmg > 0) { spawnDmgNumber('-' + enemyTookDmg, '#ff006e', false); }
+    if (playerTookDmg > 0) { flashScreen('flash-red'); Audio.sfx('damage'); }
 
     setTimeout(() => {
+      hideDamageBreakdown();
       if (battle.playerHP <= 0 || battle.enemyHP <= 0) { endBattle(); }
       else { battle.turn++; startTurn(); }
-    }, 2000);
+    }, 3500);
   }, 1600);
+}
+
+function showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveResult) {
+  const panel = document.getElementById('dmg-breakdown-panel');
+  panel.innerHTML = '';
+  panel.classList.remove('show');
+
+  // 画面の上下どちらに表示するか（プレイヤーが受けた = 下寄り、相手が受けた = 上寄り）
+  const hasPlayerDmg = playerTookDmg > 0 || breakdown.some(s => s.target === 'player');
+  const hasEnemyDmg  = enemyTookDmg  > 0 || breakdown.some(s => s.target === 'enemy');
+
+  // 両方あれば中央、片方だけなら寄せる
+  panel.style.top  = hasPlayerDmg && hasEnemyDmg ? '30%' : (hasEnemyDmg ? '20%' : '55%');
+
+  // タイトル
+  const title = document.createElement('div');
+  title.className = 'dmg-breakdown-title';
+  title.textContent = '── DAMAGE CALC ──';
+  panel.appendChild(title);
+
+  // stepsをtargetでグループ化して順番に表示
+  const targets = [];
+  if (hasEnemyDmg)  targets.push('enemy');
+  if (hasPlayerDmg) targets.push('player');
+
+  let stepDelay = 0;
+
+  targets.forEach(target => {
+    const isPlayer = target === 'player';
+    const steps = breakdown.filter(s => s.target === target);
+    if (steps.length === 0) return;
+
+    // ターゲットラベル
+    const tLabel = document.createElement('div');
+    tLabel.className = 'dmg-step';
+    tLabel.style.animationDelay = stepDelay + 'ms';
+    tLabel.innerHTML = `<span class="dmg-step-icon">${isPlayer ? '🧑' : '👤'}</span><span class="dmg-step-label" style="font-size:11px;color:${isPlayer ? 'var(--accent)' : 'var(--accent2)'}">${isPlayer ? playerName.substring(0,8) : enemyName.substring(0,8)}</span>`;
+    panel.appendChild(tLabel);
+    stepDelay += 80;
+
+    let runningDmg = 0;
+    steps.forEach(step => {
+      const row = document.createElement('div');
+      row.className = 'dmg-step';
+      row.style.animationDelay = stepDelay + 'ms';
+
+      let valClass = 'base';
+      let sign = '';
+      let displayDelta = step.delta;
+
+      if (step.delta < 0) {
+        // ダメージ増加
+        valClass = step.type === 'martyrdom' ? 'martyrdom' : 'plus';
+        sign = '';
+        displayDelta = step.delta; // 負数
+        runningDmg += Math.abs(step.delta);
+      } else if (step.delta > 0) {
+        // ダメージ軽減
+        valClass = 'minus';
+        displayDelta = step.delta;
+        runningDmg -= step.delta;
+      } else {
+        // 0 = 打ち消し/無効
+        valClass = 'minus';
+        displayDelta = 0;
+      }
+
+      const dispStr = displayDelta < 0 ? displayDelta : (displayDelta > 0 ? '+' + displayDelta : '→0');
+
+      row.innerHTML = `
+        <span class="dmg-step-icon">${step.icon}</span>
+        <span class="dmg-step-label">${step.label}</span>
+        <span class="dmg-step-val ${valClass}">${dispStr}</span>
+      `;
+      panel.appendChild(row);
+      stepDelay += 120;
+    });
+
+    // 区切り線
+    const div = document.createElement('div');
+    div.className = 'dmg-divider';
+    div.style.animationDelay = stepDelay + 'ms';
+    panel.appendChild(div);
+    stepDelay += 80;
+
+    // 合計
+    const total = isPlayer ? playerTookDmg : enemyTookDmg;
+    const totalRow = document.createElement('div');
+    totalRow.className = 'dmg-total-row';
+    totalRow.style.animationDelay = stepDelay + 'ms';
+    totalRow.innerHTML = `
+      <span class="dmg-step-icon">💥</span>
+      <span class="dmg-total-label">TOTAL</span>
+      <span class="dmg-step-val total">-${total}</span>
+    `;
+    panel.appendChild(totalRow);
+    stepDelay += 150;
+
+    // spacer
+    const sp = document.createElement('div');
+    sp.style.height = '6px';
+    panel.appendChild(sp);
+  });
+
+  // 何もなければ表示しない
+  if (breakdown.length === 0 && playerTookDmg === 0 && enemyTookDmg === 0) return;
+
+  panel.classList.add('show');
+  // パーティクル＋ダメージ数字
+  if (playerTookDmg > 0) spawnDmgNumber('-' + playerTookDmg, '#ff006e', true);
+  if (enemyTookDmg  > 0) spawnDmgNumber('-' + enemyTookDmg,  '#ff006e', false);
+}
+
+function hideDamageBreakdown() {
+  const panel = document.getElementById('dmg-breakdown-panel');
+  panel.classList.remove('show');
+  setTimeout(() => { panel.innerHTML = ''; }, 300);
 }
 
 function renderPlayedCards(zoneId, cardIds) {
