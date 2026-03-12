@@ -1878,6 +1878,9 @@ function startTurn() {
   battle.phase = 'select';
   Audio.sfx('turnStart');
 
+  // ── ターン開始時にHPを照合・補正 ──
+  _verifyAndFixHP();
+
   // Reset UI hands
   document.getElementById('player-hand-emoji').textContent = '❓';
   document.getElementById('enemy-hand-emoji').textContent = '❓';
@@ -1938,6 +1941,50 @@ function _syncMyHandToFirebase() {
     deck: battle.playerDeckRemain,
     turn: battle.turn
   }).catch(() => {});
+}
+
+// 自分のHPをFirebaseに書き込む（ターン終了後にHP照合のため）
+function _syncMyHPToFirebase() {
+  if (!roomId || !window._FB) return;
+  const { db, ref, set } = window._FB;
+  const myKey = myRole;
+  // 自分視点での自分HP・相手HPをそれぞれ書き込む
+  set(ref(db, `rooms/${roomId}/hp/${myKey}`), {
+    myHP:    battle.playerHP,
+    enemyHP: battle.enemyHP,
+    turn:    battle.turn
+  }).catch(() => {});
+}
+
+// 毎ターン開始時にHPが相手と一致しているか確認・補正する
+async function _verifyAndFixHP() {
+  if (!roomId || !window._FB) return;
+  const { db, ref, get } = window._FB;
+  const enemyKey = myRole === 'host' ? 'guest' : 'host';
+  try {
+    const snap = await get(ref(db, `rooms/${roomId}/hp/${enemyKey}`));
+    if (!snap.exists()) return;
+    const eData = snap.val();
+    // 相手の書き込みが同じターンのものか確認
+    if (eData.turn !== battle.turn - 1 && eData.turn !== battle.turn) return;
+    // 相手視点での「相手HP（＝自分のHP）」と自分のHPを照合
+    const enemySaysMyHP    = eData.enemyHP; // 相手が記録した「相手HP」＝自分のHP
+    const enemySaysEnemyHP = eData.myHP;    // 相手が記録した「自分HP」＝相手のHP
+    let fixed = false;
+    // 自分のHPが2以上ずれていたら相手の値で上書き（小さい方＝ダメージが多い方を採用）
+    if (Math.abs(battle.playerHP - enemySaysMyHP) >= 2) {
+      battle.playerHP = Math.min(battle.playerHP, enemySaysMyHP);
+      fixed = true;
+    }
+    if (Math.abs(battle.enemyHP - enemySaysEnemyHP) >= 2) {
+      battle.enemyHP = Math.min(battle.enemyHP, enemySaysEnemyHP);
+      fixed = true;
+    }
+    if (fixed) {
+      updateHPDisplay();
+      spawnEffectToast('🔄 HP同期', '#00f5ff', true);
+    }
+  } catch(e) {}
 }
 
 function drawCardsFromDeck(deck, count) {
@@ -2624,11 +2671,23 @@ async function applyCardEffect(owner, cardId) {
         };
         showPeekReselectUI(battle.enemySelectedHand);
       });
+      // 再選択後の自分の手をFirebaseに通知（相手の待機を解除するため）
+      await publishInteraction('peekDone', { newHand: battle.selectedHand });
     } else {
-      // 相手が発動：自分は待機表示のみ（盗み見は相手側だけの問題）
+      // 相手が発動：自分は相手がサードアイを終えるまで待機する
       battle.enemyPeekReselect = true;
-      // 相手の手（enemySelectedHand）はすでに決まっているので変更不要
       spawnEffectToast('👁️ 相手がサードアイ発動中...', '#ff006e', false);
+      setArenaStatus('⏳ 相手がサードアイ発動中...');
+      document.getElementById('resolution-overlay').style.display = 'none';
+      // 相手がpeekDoneを送ってくるまで待機
+      const peekPayload = await waitForEnemyInteraction('peekDone');
+      document.getElementById('resolution-overlay').style.display = 'flex';
+      setArenaStatus('');
+      // 相手が選び直した手を反映
+      if (peekPayload && peekPayload.newHand) {
+        battle.enemySelectedHand = peekPayload.newHand;
+      }
+      battle.enemyPeekReselect = false;
     }
   }
 
@@ -2879,6 +2938,9 @@ function resolveHandBattle() {
     battle.playerMartyrdom = false; battle.enemyMartyrdom = false;
     battle.playerDoubleAllDamage = false; battle.enemyDoubleAllDamage = false;
     battle.playerPeekReselect = false; battle.enemyPeekReselect = false;
+
+    // ── HPをFirebaseに書き込んで同期 ──
+    _syncMyHPToFirebase();
 
     showRoundResult(result, ph, eh, playerTookDmg, enemyTookDmg);
     if (playerTookDmg > 0) { flashScreen('flash-red'); spawnDmgNumber('-' + playerTookDmg, '#ff006e', true); Audio.sfx('damage'); }
