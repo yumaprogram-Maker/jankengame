@@ -2564,12 +2564,9 @@ function confirmPeekAction() {
   const btn = document.getElementById('battle-confirm-btn');
   btn.dataset.peekMode = '0';
 
-  if (gameMode === 'solo') {
-    resolveRound();
-    return;
-  }
-
-  // Promiseベースのコールバックで再開
+  // ソロ・オンライン共通：Promiseベースのコールバックで再開
+  // （applyCardEffect内の peekAndReselect ブロックが _peekResumeCallback をセットしている）
+  // ソロモードで直接 resolveRound() を呼ぶと applyCardEffect の await が二重実行されてバグになるため削除
   if (window._peekResumeCallback) {
     const cb = window._peekResumeCallback;
     window._peekResumeCallback = null;
