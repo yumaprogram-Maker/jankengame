@@ -936,6 +936,10 @@ body {
 }
 .dmg-total-row .dmg-total-label { font-size: 11px; color: var(--text-dim); flex: 1; }
 
+@keyframes tapHintBlink {
+  0%,100% { opacity: 0.5; } 50% { opacity: 1; }
+}
+
 /* ===== GEAR BUTTON ===== */
 #gear-btn {
   position: fixed; top: 12px; right: 12px; z-index: 100;
@@ -3190,11 +3194,12 @@ function resolveHandBattle() {
     showRoundResult(result, ph, eh, playerTookDmg, enemyTookDmg);
     if (playerTookDmg > 0) { flashScreen('flash-red'); Audio.sfx('damage'); }
 
-    setTimeout(() => {
+    // タップで閉じる待機状態にする
+    waitDamageBreakdownTap(() => {
       hideDamageBreakdown();
       if (battle.playerHP <= 0 || battle.enemyHP <= 0) { endBattle(); }
       else { battle.turn++; startTurn(); }
-    }, 3500);
+    });
   }, 1600);
 }
 
@@ -3290,10 +3295,36 @@ function showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveRe
   // 何もなければ表示しない
   if (breakdown.length === 0 && playerTookDmg === 0 && enemyTookDmg === 0) return;
 
+  // タップヒント
+  const tapHint = document.createElement('div');
+  tapHint.id = 'dmg-tap-hint';
+  tapHint.style.cssText = `
+    font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 2px;
+    color: var(--text-dim); margin-top: 10px; text-align: center;
+    animation: tapHintBlink 1s ease-in-out infinite;
+  `;
+  tapHint.textContent = '▼  TAP TO CONTINUE  ▼';
+  inner.appendChild(tapHint);
+
   panel.classList.add('show');
   // パーティクル＋ダメージ数字
   if (playerTookDmg > 0) spawnDmgNumber('-' + playerTookDmg, '#ff006e', true);
   if (enemyTookDmg  > 0) spawnDmgNumber('-' + enemyTookDmg,  '#ff006e', false);
+}
+
+let _dmgTapCallback = null;
+
+function waitDamageBreakdownTap(callback) {
+  const panel = document.getElementById('dmg-breakdown-panel');
+  _dmgTapCallback = callback;
+  const onTap = (e) => {
+    if (_dmgTapCallback) {
+      _dmgTapCallback = null;
+      panel.removeEventListener('pointerdown', onTap);
+      callback();
+    }
+  };
+  panel.addEventListener('pointerdown', onTap);
 }
 
 function hideDamageBreakdown() {
