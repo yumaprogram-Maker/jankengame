@@ -878,49 +878,132 @@ body {
   100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
 }
 
-/* ===== DAMAGE BREAKDOWN PANEL ===== */
+/* ===== DAMAGE BREAKDOWN PANEL (モーダル形式) ===== */
 #dmg-breakdown-panel {
-  position: fixed; left: 50%; transform: translateX(-50%);
-  z-index: 58; pointer-events: none;
-  display: flex; flex-direction: column; gap: 4px;
-  align-items: center; min-width: 260px;
-  opacity: 0; transition: opacity 0.25s;
+  position: fixed; inset: 0; z-index: 58; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.3s;
 }
-#dmg-breakdown-panel.show { opacity: 1; }
+#dmg-breakdown-panel.show { opacity: 1; pointer-events: all; }
+.dmg-breakdown-inner {
+  background: rgba(5,5,20,0.97);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 20px 24px 16px;
+  min-width: 280px; max-width: 340px; width: 90%;
+  box-shadow: 0 0 40px rgba(0,0,0,0.8), 0 0 60px rgba(0,245,255,0.1);
+  display: flex; flex-direction: column; gap: 4px; align-items: center;
+  backdrop-filter: blur(8px);
+  animation: dmgModalIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes dmgModalIn {
+  0% { opacity:0; transform: scale(0.8) translateY(20px); }
+  100% { opacity:1; transform: scale(1) translateY(0); }
+}
 .dmg-breakdown-title {
-  font-family: 'Orbitron', monospace; font-size: 10px;
-  letter-spacing: 2px; color: var(--text-dim); margin-bottom: 2px;
+  font-family: 'Orbitron', monospace; font-size: 11px;
+  letter-spacing: 3px; color: var(--accent); margin-bottom: 6px;
+  border-bottom: 1px solid var(--border); padding-bottom: 6px; width: 100%; text-align: center;
 }
 .dmg-step {
   display: flex; align-items: center; gap: 6px;
   font-family: 'Orbitron', monospace; font-weight: 700;
-  font-size: 13px; white-space: nowrap;
+  font-size: 13px; white-space: nowrap; width: 100%;
   animation: stepPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
 }
 @keyframes stepPop {
   0% { opacity:0; transform: scale(0.6) translateX(-10px); }
   100% { opacity:1; transform: scale(1) translateX(0); }
 }
-.dmg-step-icon { font-size: 18px; line-height:1; }
-.dmg-step-label { color: var(--text-dim); font-size: 10px; }
-.dmg-step-val { font-size: 15px; font-weight: 900; }
+.dmg-step-icon { font-size: 18px; line-height:1; flex-shrink:0; }
+.dmg-step-label { color: var(--text-dim); font-size: 10px; flex: 1; }
+.dmg-step-val { font-size: 15px; font-weight: 900; text-align: right; }
 .dmg-step-val.plus  { color: #ff8c00; text-shadow: 0 0 8px #ff8c00; }
 .dmg-step-val.minus { color: #00f5ff; text-shadow: 0 0 8px #00f5ff; }
 .dmg-step-val.base  { color: #aaaacc; }
 .dmg-step-val.total { color: #ffd600; font-size: 20px; text-shadow: 0 0 12px #ffd600; }
 .dmg-step-val.martyrdom { color: #ff006e; text-shadow: 0 0 12px #ff006e; }
 .dmg-divider {
-  width: 200px; height: 1px;
+  width: 100%; height: 1px;
   background: linear-gradient(90deg, transparent, var(--border), transparent);
-  margin: 2px 0;
+  margin: 4px 0;
 }
 .dmg-total-row {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 8px; width: 100%;
   font-family: 'Orbitron', monospace; font-weight: 900;
   font-size: 18px;
   animation: stepPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
 }
-.dmg-total-row .dmg-total-label { font-size: 11px; color: var(--text-dim); }
+.dmg-total-row .dmg-total-label { font-size: 11px; color: var(--text-dim); flex: 1; }
+
+/* ===== GEAR BUTTON ===== */
+#gear-btn {
+  position: fixed; top: 12px; right: 12px; z-index: 100;
+  width: 40px; height: 40px;
+  background: rgba(0,0,0,0.6); border: 1px solid var(--border);
+  border-radius: 50%; cursor: pointer; font-size: 18px;
+  display: none; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+#gear-btn:hover { background: rgba(0,245,255,0.1); border-color: var(--accent); }
+#gear-btn.visible { display: flex; }
+
+/* ===== LOG MODAL ===== */
+#log-modal {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.85); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+#log-modal.show { opacity: 1; pointer-events: all; }
+.log-modal-inner {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  width: 90%; max-width: 440px; max-height: 80vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(0,245,255,0.15);
+}
+.log-modal-header {
+  padding: 16px 20px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.log-modal-title {
+  font-family: 'Orbitron', monospace; font-size: 14px;
+  color: var(--accent); letter-spacing: 2px;
+}
+.log-modal-close {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-dim); border-radius: 8px;
+  padding: 6px 12px; font-size: 12px; cursor: pointer;
+  font-family: 'Orbitron', monospace;
+}
+.log-list {
+  flex: 1; overflow-y: auto; padding: 12px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  scrollbar-width: thin;
+}
+.log-entry {
+  background: var(--surface2); border-radius: 10px;
+  padding: 10px 12px; border-left: 3px solid var(--border);
+  font-size: 12px; line-height: 1.5;
+}
+.log-entry.log-turn { border-left-color: var(--accent3); }
+.log-entry.log-card-player { border-left-color: var(--accent); }
+.log-entry.log-card-enemy { border-left-color: var(--accent2); }
+.log-entry.log-result-win { border-left-color: #ffd600; }
+.log-entry.log-result-lose { border-left-color: #ff006e; }
+.log-entry.log-result-draw { border-left-color: var(--accent); }
+.log-entry.log-damage { border-left-color: #ff8c00; }
+.log-turn-label {
+  font-family: 'Orbitron', monospace; font-size: 10px;
+  color: var(--accent3); letter-spacing: 2px; font-weight: 700;
+}
+.log-text { color: var(--text); margin-top: 2px; }
+.log-sub { color: var(--text-dim); font-size: 11px; }
 
 /* ===== FLASH ===== */
 .screen-flash {
@@ -1177,8 +1260,24 @@ body {
   <div class="reveal-cards" id="reveal-cards-content"></div>
 </div>
 
+<!-- GEAR BUTTON (battle log) -->
+<button id="gear-btn" onclick="openLogModal()" title="バトルログ">⚙️</button>
+
+<!-- LOG MODAL -->
+<div id="log-modal">
+  <div class="log-modal-inner">
+    <div class="log-modal-header">
+      <div class="log-modal-title">⚙️ BATTLE LOG</div>
+      <button class="log-modal-close" onclick="closeLogModal()">✕ CLOSE</button>
+    </div>
+    <div class="log-list" id="log-list">
+      <div style="color:var(--text-dim);font-size:12px;text-align:center;padding:20px;font-family:Orbitron,monospace;">ログはありません</div>
+    </div>
+  </div>
+</div>
+
 <!-- DAMAGE BREAKDOWN PANEL -->
-<div id="dmg-breakdown-panel"></div>
+<div id="dmg-breakdown-panel"><div class="dmg-breakdown-inner" id="dmg-breakdown-inner"></div></div>
 
 <!-- ROUND RESULT POPUP -->
 <div class="round-result-popup" id="round-result-popup">
@@ -1189,7 +1288,8 @@ body {
 <!-- BATTLE RESULT -->
 <div id="battle-result">
   <div class="result-text" id="result-text"></div>
-  <div style="font-family:Orbitron,monospace;font-size:14px;color:var(--text-dim);margin-bottom:30px;" id="result-sub"></div>
+  <div style="font-family:Orbitron,monospace;font-size:14px;color:var(--text-dim);margin-bottom:24px;" id="result-sub"></div>
+  <button class="btn btn-sm" style="margin-bottom:14px;width:100%;max-width:240px;" onclick="openLogModal()">📋 バトルログを見る</button>
   <button class="btn btn-primary" onclick="backToTitle()">BACK TO TITLE</button>
 </div>
 
@@ -1455,6 +1555,8 @@ function saveName() {
 
 function backToTitle() {
   document.getElementById('battle-result').classList.remove('show');
+  closeLogModal();
+  showGearBtn(false);
   showScreen('title');
 }
 
@@ -1869,6 +1971,8 @@ async function startBattle() {
   await update(ref(db, 'rooms/' + roomId), { status: 'battle', turn: 1 });
 
   showScreen('battle');
+  clearBattleLog();
+  showGearBtn(true);
   document.getElementById('player-name-display').textContent = playerName.substring(0,8);
   document.getElementById('enemy-name-display').textContent = enemyName.substring(0,8);
   startTurn();
@@ -2558,7 +2662,14 @@ async function nextCardReveal() {
     Audio.sfx('activate');
     await applyCardEffect(item.owner, item.cardId);
     const card = getCard(item.cardId);
-    if (card) spawnEffectToast(card.desc, RANK_GLOW_COLOR[card.rank] || '#fff', item.owner === 'player');
+    if (card) {
+      spawnEffectToast(card.desc, RANK_GLOW_COLOR[card.rank] || '#fff', item.owner === 'player');
+      // ログに記録
+      const owner = item.owner === 'player' ? playerName : enemyName;
+      addLog(item.owner === 'player' ? 'card-player' : 'card-enemy',
+        `${card.icon} ${owner}が「${card.name}」を発動`,
+        card.desc);
+    }
   }
 
   btn.disabled = false;
@@ -3089,23 +3200,19 @@ function resolveHandBattle() {
 
 function showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveResult) {
   const panel = document.getElementById('dmg-breakdown-panel');
-  panel.innerHTML = '';
+  const inner = document.getElementById('dmg-breakdown-inner');
+  inner.innerHTML = '';
   panel.classList.remove('show');
-
-  // 画面の上下どちらに表示するか（プレイヤーが受けた = 下寄り、相手が受けた = 上寄り）
-  const hasPlayerDmg = playerTookDmg > 0 || breakdown.some(s => s.target === 'player');
-  const hasEnemyDmg  = enemyTookDmg  > 0 || breakdown.some(s => s.target === 'enemy');
-
-  // 両方あれば中央、片方だけなら寄せる
-  panel.style.top  = hasPlayerDmg && hasEnemyDmg ? '30%' : (hasEnemyDmg ? '20%' : '55%');
 
   // タイトル
   const title = document.createElement('div');
   title.className = 'dmg-breakdown-title';
   title.textContent = '── DAMAGE CALC ──';
-  panel.appendChild(title);
+  inner.appendChild(title);
 
   // stepsをtargetでグループ化して順番に表示
+  const hasPlayerDmg = playerTookDmg > 0 || breakdown.some(s => s.target === 'player');
+  const hasEnemyDmg  = enemyTookDmg  > 0 || breakdown.some(s => s.target === 'enemy');
   const targets = [];
   if (hasEnemyDmg)  targets.push('enemy');
   if (hasPlayerDmg) targets.push('player');
@@ -3122,32 +3229,24 @@ function showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveRe
     tLabel.className = 'dmg-step';
     tLabel.style.animationDelay = stepDelay + 'ms';
     tLabel.innerHTML = `<span class="dmg-step-icon">${isPlayer ? '🧑' : '👤'}</span><span class="dmg-step-label" style="font-size:11px;color:${isPlayer ? 'var(--accent)' : 'var(--accent2)'}">${isPlayer ? playerName.substring(0,8) : enemyName.substring(0,8)}</span>`;
-    panel.appendChild(tLabel);
+    inner.appendChild(tLabel);
     stepDelay += 80;
 
-    let runningDmg = 0;
     steps.forEach(step => {
       const row = document.createElement('div');
       row.className = 'dmg-step';
       row.style.animationDelay = stepDelay + 'ms';
 
       let valClass = 'base';
-      let sign = '';
       let displayDelta = step.delta;
 
       if (step.delta < 0) {
-        // ダメージ増加
         valClass = step.type === 'martyrdom' ? 'martyrdom' : 'plus';
-        sign = '';
-        displayDelta = step.delta; // 負数
-        runningDmg += Math.abs(step.delta);
+        displayDelta = step.delta;
       } else if (step.delta > 0) {
-        // ダメージ軽減
         valClass = 'minus';
         displayDelta = step.delta;
-        runningDmg -= step.delta;
       } else {
-        // 0 = 打ち消し/無効
         valClass = 'minus';
         displayDelta = 0;
       }
@@ -3159,15 +3258,14 @@ function showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveRe
         <span class="dmg-step-label">${step.label}</span>
         <span class="dmg-step-val ${valClass}">${dispStr}</span>
       `;
-      panel.appendChild(row);
+      inner.appendChild(row);
       stepDelay += 120;
     });
 
     // 区切り線
     const div = document.createElement('div');
     div.className = 'dmg-divider';
-    div.style.animationDelay = stepDelay + 'ms';
-    panel.appendChild(div);
+    inner.appendChild(div);
     stepDelay += 80;
 
     // 合計
@@ -3180,13 +3278,13 @@ function showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveRe
       <span class="dmg-total-label">TOTAL</span>
       <span class="dmg-step-val total">-${total}</span>
     `;
-    panel.appendChild(totalRow);
+    inner.appendChild(totalRow);
     stepDelay += 150;
 
     // spacer
     const sp = document.createElement('div');
     sp.style.height = '6px';
-    panel.appendChild(sp);
+    inner.appendChild(sp);
   });
 
   // 何もなければ表示しない
@@ -3227,18 +3325,26 @@ function showRoundResult(result, ph, eh, pdmg, edmg) {
   const dmgEl = document.getElementById('rr-damage');
   popup.classList.remove('show');
 
+  const RPS_NAME_JP = { guu:'グー✊', paa:'パー✋', choki:'チョキ✌️' };
+
   if (result === 'draw') {
     Audio.sfx('draw');
     mainEl.style.color = '#00f5ff'; mainEl.textContent = 'DRAW!';
     dmgEl.style.color = '#aaa';    dmgEl.textContent = `両者 -${pdmg}`;
+    addLog('result-draw', `🤝 DRAW! ${RPS_NAME_JP[ph]} vs ${RPS_NAME_JP[eh]}`,
+      pdmg > 0 ? `両者 -${pdmg} HP` : 'ダメージなし');
   } else if (result === 'player') {
     Audio.sfx('win');
     mainEl.style.color = '#ffd600'; mainEl.textContent = 'WIN!';
     dmgEl.style.color = '#ff006e'; dmgEl.textContent = `${enemyName} -${edmg}`;
+    addLog('result-win', `🏆 WIN! ${RPS_NAME_JP[ph]} > ${RPS_NAME_JP[eh]}`,
+      edmg > 0 ? `${enemyName} -${edmg} HP → 残HP: ${battle.enemyHP}` : 'ダメージなし');
   } else {
     Audio.sfx('lose');
     mainEl.style.color = '#ff006e'; mainEl.textContent = 'LOSE...';
     dmgEl.style.color = '#ff006e'; dmgEl.textContent = `${playerName} -${pdmg}`;
+    addLog('result-lose', `💀 LOSE... ${RPS_NAME_JP[ph]} vs ${RPS_NAME_JP[eh]}`,
+      pdmg > 0 ? `${playerName} -${pdmg} HP → 残HP: ${battle.playerHP}` : 'ダメージなし');
   }
 
   void popup.offsetWidth;
@@ -3254,14 +3360,17 @@ function endBattle() {
     Audio.sfx('draw');
     txt.className = 'result-text result-draw'; txt.textContent = 'DRAW';
     sub.textContent = '両者同時にHP0';
+    addLog('result-draw', '⚖️ DRAW - 両者同時にHP0', `TURN ${battle.turn} 終了`);
   } else if (battle.enemyHP <= 0) {
     Audio.sfx('victory');
     txt.className = 'result-text result-win'; txt.textContent = 'VICTORY!';
     sub.textContent = `${enemyName} を倒した！`;
+    addLog('result-win', `🏆 VICTORY! ${enemyName} を倒した！`, `全${battle.turn}ターン`);
   } else {
     Audio.sfx('defeat');
     txt.className = 'result-text result-lose'; txt.textContent = 'DEFEATED';
     sub.textContent = `${enemyName} に敗れた...`;
+    addLog('result-lose', `💀 DEFEATED - ${enemyName} に敗れた...`, `全${battle.turn}ターン`);
   }
   result.classList.add('show');
 
@@ -3552,6 +3661,55 @@ function buildSoundControls() {
     <button id="btn-bgm" onclick="onToggleBgm()" style="${btnStyle}">🎵</button>
     <button id="btn-sfx" onclick="onToggleSfx()" style="${btnStyle}">🔊</button>
   `;
+}
+
+// ============================================================
+// BATTLE LOG SYSTEM
+// ============================================================
+const battleLog = [];
+
+function addLog(type, text, sub) {
+  battleLog.push({ type, text, sub: sub || '', turn: battle.turn || 0, ts: Date.now() });
+}
+
+function renderLogList() {
+  const list = document.getElementById('log-list');
+  if (!list) return;
+  if (battleLog.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:20px;font-family:Orbitron,monospace;">ログはありません</div>';
+    return;
+  }
+  list.innerHTML = '';
+  battleLog.forEach(entry => {
+    const el = document.createElement('div');
+    el.className = 'log-entry log-' + entry.type;
+    el.innerHTML = `
+      <div class="log-turn-label">${entry.turn > 0 ? 'TURN ' + entry.turn : 'BATTLE'}</div>
+      <div class="log-text">${entry.text}</div>
+      ${entry.sub ? `<div class="log-sub">${entry.sub}</div>` : ''}
+    `;
+    list.appendChild(el);
+  });
+  // Scroll to bottom
+  list.scrollTop = list.scrollHeight;
+}
+
+function openLogModal() {
+  renderLogList();
+  document.getElementById('log-modal').classList.add('show');
+}
+
+function closeLogModal() {
+  document.getElementById('log-modal').classList.remove('show');
+}
+
+function showGearBtn(visible) {
+  const btn = document.getElementById('gear-btn');
+  if (btn) btn.classList.toggle('visible', visible);
+}
+
+function clearBattleLog() {
+  battleLog.length = 0;
 }
 function onToggleBgm() {
   const on = Audio.toggleBgm();
