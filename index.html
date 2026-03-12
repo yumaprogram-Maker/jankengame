@@ -3299,7 +3299,10 @@ function showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveRe
 function hideDamageBreakdown() {
   const panel = document.getElementById('dmg-breakdown-panel');
   panel.classList.remove('show');
-  setTimeout(() => { panel.innerHTML = ''; }, 300);
+  setTimeout(() => {
+    const inner = document.getElementById('dmg-breakdown-inner');
+    if (inner) inner.innerHTML = '';
+  }, 300);
 }
 
 function renderPlayedCards(zoneId, cardIds) {
