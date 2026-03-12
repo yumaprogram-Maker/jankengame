@@ -2774,8 +2774,51 @@ async function applyCardEffect(owner, cardId) {
   }
   if (e.forceEnemyRandom) {
     const hands = ['guu','paa','choki'];
-    if (isPlayer) battle.enemyForced = hands[Math.floor(Math.random()*3)];
-    else battle.playerForced = hands[Math.floor(Math.random()*3)];
+    // オンライン同期: カード発動者のroleによって一方が乱数を決定してFirebaseに書き込む
+    if (isPlayer) {
+      let forcedHand = null;
+      if (roomId && window._FB) {
+        const fbDB = window._FB.db, fbRef = window._FB.ref, fbSet = window._FB.set, fbGet = window._FB.get;
+        const forcePath = 'rooms/' + roomId + '/turns/' + battle.turn + '/forceRandom';
+        if (myRole === 'host') {
+          // ホスト(自分)が決定値を書き込む
+          forcedHand = hands[Math.floor(Math.random()*3)];
+          try { await fbSet(fbRef(fbDB, forcePath), forcedHand); } catch(_e) {}
+        } else {
+          // ゲスト(自分)はホストが書き込んだ値を待つ (最大2秒)
+          for (let i = 0; i < 8; i++) {
+            try { const snap = await fbGet(fbRef(fbDB, forcePath)); if (snap.exists()) { forcedHand = snap.val(); break; } } catch(_e) {}
+            await new Promise(r => setTimeout(r, 250));
+          }
+          if (!forcedHand) forcedHand = hands[Math.floor(Math.random()*3)];
+        }
+      } else {
+        forcedHand = hands[Math.floor(Math.random()*3)];
+      }
+      battle.enemyForced = forcedHand;
+    } else {
+      // 相手がカード発動者（自分は被対象）
+      let forcedHand = null;
+      if (roomId && window._FB) {
+        const fbDB = window._FB.db, fbRef = window._FB.ref, fbSet = window._FB.set, fbGet = window._FB.get;
+        const forcePath = 'rooms/' + roomId + '/turns/' + battle.turn + '/forceRandomEnemy';
+        if (myRole === 'guest') {
+          // ゲスト(相手)が決定値を書き込んでいるのでホスト(自分)が読む
+          for (let i = 0; i < 8; i++) {
+            try { const snap = await fbGet(fbRef(fbDB, forcePath)); if (snap.exists()) { forcedHand = snap.val(); break; } } catch(_e) {}
+            await new Promise(r => setTimeout(r, 250));
+          }
+          if (!forcedHand) forcedHand = hands[Math.floor(Math.random()*3)];
+        } else {
+          // ホスト(相手)が発動者 → ゲスト(自分)が書き込む
+          forcedHand = hands[Math.floor(Math.random()*3)];
+          try { await fbSet(fbRef(fbDB, forcePath), forcedHand); } catch(_e) {}
+        }
+      } else {
+        forcedHand = hands[Math.floor(Math.random()*3)];
+      }
+      battle.playerForced = forcedHand;
+    }
   }
   if (e.reflect) {
     if (isPlayer) battle.playerReflect = (battle.playerReflect||0) + e.reflect;
@@ -2997,7 +3040,8 @@ function resolveHandBattle() {
       eEmoji.classList.add('winner'); pEmoji.classList.add('loser');
     }
 
-    let baseDmg = 20;
+    // 3ターンごとに基本ダメージ+5（ターン1-3:20, 4-6:25, 7-9:30, ...）
+    let baseDmg = 20 + Math.floor((battle.turn - 1) / 3) * 5;
 
     // martyrdom: force loss and 3x damage for that player
     let playerForcedLose = battle.playerMartyrdom;
