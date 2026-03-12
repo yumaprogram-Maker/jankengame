@@ -942,7 +942,7 @@ body {
 
 /* ===== GEAR BUTTON ===== */
 #gear-btn {
-  position: fixed; top: 12px; right: 12px; z-index: 100;
+  position: fixed; top: 80px; right: 12px; z-index: 100;
   width: 40px; height: 40px;
   background: rgba(0,0,0,0.6); border: 1px solid var(--border);
   border-radius: 50%; cursor: pointer; font-size: 18px;
@@ -1113,7 +1113,10 @@ body {
   <div class="title-rps">
     <span>✊</span><span>✋</span><span>✌️</span>
   </div>
-  <button class="btn btn-gold" onclick="Audio.bgm('title'); startFromTitle()">START GAME</button>
+  <div style="display:flex;flex-direction:column;gap:14px;width:100%;max-width:300px;align-items:center;">
+    <button class="btn btn-gold" onclick="Audio.bgm('title'); startFromTitle('online')" style="font-size:16px;">🌐 通信対戦</button>
+    <button class="btn btn-primary" onclick="Audio.bgm('title'); startFromTitle('solo')" style="background:linear-gradient(135deg,#a020f0,#5500cc);box-shadow:0 0 30px rgba(160,32,240,0.4);">🤖 ソロプレイ</button>
+  </div>
 </div>
 
 <!-- NAME -->
@@ -1126,7 +1129,10 @@ body {
 
 <!-- DECK -->
 <div id="screen-deck" class="screen hidden">
-  <div class="screen-title" style="margin-bottom:8px;">DECK BUILD</div>
+  <div style="display:flex;align-items:center;justify-content:center;width:100%;max-width:480px;position:relative;margin-bottom:8px;">
+    <div class="screen-title">DECK BUILD</div>
+    <button onclick="openDeckManager()" style="position:absolute;right:0;background:rgba(0,0,0,0.5);border:1px solid var(--border);color:var(--accent);border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="保存デッキ">⚙️</button>
+  </div>
   <div class="deck-header" id="deck-header">
     <div class="deck-cost-display">COST: <span id="deck-cost-val">0</span> / 200</div>
     <div class="deck-cost-display">CARDS: <span id="deck-count-val">0</span> / 16</div>
@@ -1293,8 +1299,62 @@ body {
 <div id="battle-result">
   <div class="result-text" id="result-text"></div>
   <div style="font-family:Orbitron,monospace;font-size:14px;color:var(--text-dim);margin-bottom:24px;" id="result-sub"></div>
-  <button class="btn btn-sm" style="margin-bottom:14px;width:100%;max-width:240px;" onclick="openLogModal()">📋 バトルログを見る</button>
+  <button class="btn btn-sm" style="margin-bottom:10px;width:100%;max-width:240px;" onclick="openLogModal()">📋 バトルログを見る</button>
+  <button class="btn btn-sm" style="margin-bottom:14px;width:100%;max-width:240px;background:linear-gradient(135deg,rgba(0,245,255,0.15),rgba(0,100,200,0.15));border-color:var(--accent);color:var(--accent);" onclick="saveDeckPrompt()">💾 このデッキを保存</button>
   <button class="btn btn-primary" onclick="backToTitle()">BACK TO TITLE</button>
+</div>
+
+<!-- SAVE DECK MODAL -->
+<div id="save-deck-modal" style="
+  position:fixed;inset:0;z-index:250;background:rgba(0,0,0,0.85);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;
+">
+  <div style="
+    background:var(--surface);border:2px solid var(--accent);border-radius:20px;
+    width:90%;max-width:360px;padding:24px 20px;box-shadow:0 0 60px rgba(0,245,255,0.2);
+    display:flex;flex-direction:column;gap:16px;
+  ">
+    <div style="font-family:'Orbitron',monospace;font-size:15px;color:var(--accent);letter-spacing:2px;text-align:center;">💾 デッキを保存</div>
+    <input id="save-deck-name-input" maxlength="12" placeholder="デッキ名（最大12文字）" style="
+      background:var(--surface2);border:2px solid var(--border);color:var(--text);
+      border-radius:10px;padding:12px 14px;font-size:16px;font-family:'Noto Sans JP',sans-serif;
+      width:100%;outline:none;transition:border-color 0.2s;
+    " oninput="this.style.borderColor='var(--accent)'" />
+    <div id="save-deck-msg" style="font-size:12px;color:var(--accent3);text-align:center;min-height:16px;font-family:'Orbitron',monospace;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeSaveDeckModal()" style="
+        flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);
+        color:var(--text-dim);border-radius:10px;font-family:'Orbitron',monospace;
+        font-size:12px;cursor:pointer;letter-spacing:1px;
+      ">キャンセル</button>
+      <button onclick="confirmSaveDeck()" style="
+        flex:1;padding:12px;background:linear-gradient(135deg,#00c8ff,#0062ff);
+        border:none;color:white;border-radius:10px;font-family:'Orbitron',monospace;
+        font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;
+        box-shadow:0 0 20px rgba(0,245,255,0.3);
+      ">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- DECK MANAGER MODAL -->
+<div id="deck-manager-modal" style="
+  position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.85);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;
+">
+  <div style="
+    background:var(--surface);border:2px solid var(--border);border-radius:20px;
+    width:90%;max-width:440px;max-height:80vh;display:flex;flex-direction:column;
+    overflow:hidden;box-shadow:0 0 60px rgba(0,245,255,0.15);
+  ">
+    <div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);">
+      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);letter-spacing:2px;">💾 SAVED DECKS</div>
+      <button onclick="closeDeckManager()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);border-radius:8px;padding:4px 12px;font-family:'Orbitron',monospace;font-size:11px;cursor:pointer;letter-spacing:1px;">✕ CLOSE</button>
+    </div>
+    <div id="deck-manager-list" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;">
+      <div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px;font-family:'Orbitron',monospace;">保存されたデッキはありません</div>
+    </div>
+  </div>
 </div>
 
 <!-- FLASH -->
@@ -1498,6 +1558,7 @@ const CARD_DB = [
 let playerName = '';
 let playerDeck = []; // array of card ids
 let enemyName = '';
+let gameMode = 'online'; // 'online' | 'solo'
 
 // Battle state
 let battle = {
@@ -1537,7 +1598,8 @@ function showScreen(id) {
   if (id === 'battle') { Audio.bgm('battle'); buildSoundControls(); }
 }
 
-function startFromTitle() {
+function startFromTitle(mode) {
+  gameMode = mode || 'online';
   Audio.sfx('click');
   if (!localStorage.getItem('janken_name')) {
     showScreen('name');
@@ -1561,6 +1623,8 @@ function backToTitle() {
   document.getElementById('battle-result').classList.remove('show');
   closeLogModal();
   showGearBtn(false);
+  _battleStarted = false;
+  _matchingActive = false;
   showScreen('title');
 }
 
@@ -1759,7 +1823,11 @@ function finishDeck() {
   Object.entries(deckSelection).forEach(([id, cnt]) => {
     for (let i = 0; i < cnt; i++) playerDeck.push(id);
   });
-  startMatchmaking();
+  if (gameMode === 'solo') {
+    startSoloBattle();
+  } else {
+    startMatchmaking();
+  }
 }
 
 // ============================================================
@@ -2100,6 +2168,61 @@ function shuffle(arr) {
 }
 
 // ============================================================
+// SOLO PLAY (vs CPU)
+// ============================================================
+function startSoloBattle() {
+  myRole = 'host';
+  roomId = null; roomRef = null;
+  _battleStarted = true;
+  _matchingActive = false;
+  enemyName = 'CPU';
+
+  const aiDeck = buildAIDeck();
+
+  // init battle state
+  battle.playerHP = 100; battle.enemyHP = 100;
+  battle.turn = 1;
+  battle.playerDmgUp = 0; battle.playerDmgReduce = 0; battle.playerShield = false;
+  battle.enemyDmgUp = 0; battle.enemyDmgReduce = 0; battle.enemyShield = false;
+  battle.playerForced = null; battle.enemyForced = null;
+  battle.playerDrawDmg = 0; battle.enemyDrawDmg = 0;
+  battle.playerReflect = 0; battle.enemyReflect = 0;
+  battle.playerExtraDraw = 0; battle.enemyExtraDraw = 0;
+  battle.playerCounterMultiplier = 0; battle.enemyCounterMultiplier = 0;
+  battle.playerMartyrdom = false; battle.enemyMartyrdom = false;
+  battle.playerDoubleAllDamage = false; battle.enemyDoubleAllDamage = false;
+  battle.playerPeekReselect = false; battle.enemyPeekReselect = false;
+  battle.lastUsedPlayerCards = []; battle.lastUsedEnemyCards = [];
+  battle.playerHand = []; battle.enemyHand = [];
+  battle.playerDeckRemain = shuffle([...playerDeck]);
+  battle.enemyDeckRemain = shuffle([...aiDeck]);
+
+  showScreen('battle');
+  clearBattleLog();
+  showGearBtn(true);
+  document.getElementById('player-name-display').textContent = playerName.substring(0,8);
+  document.getElementById('enemy-name-display').textContent = 'CPU';
+
+  startTurn();
+}
+
+// CPU がアクションを選択する（ソロプレイ用）
+function getCPUAction() {
+  const hands = ['guu','paa','choki'];
+  const hand = hands[Math.floor(Math.random() * 3)];
+  // CPUは手札からランダムに0〜2枚選択
+  const maxCards = Math.min(3, battle.enemyHand.length);
+  const numCards = Math.floor(Math.random() * (maxCards + 1));
+  const handCopy = [...battle.enemyHand];
+  const chosen = [];
+  for (let i = 0; i < numCards; i++) {
+    const idx = Math.floor(Math.random() * handCopy.length);
+    chosen.push(handCopy.splice(idx, 1)[0]);
+  }
+  return { hand, cards: chosen };
+}
+
+// ============================================================
 // TURN FLOW
 // ============================================================
 const MAX_HAND = 10;
@@ -2389,9 +2512,24 @@ function confirmAction() {
   if (!battle.selectedHand) return;
   Audio.sfx('confirm');
   showHandSelectArea(false);
-  setArenaStatus('相手の行動を待っています...');
+  setArenaStatus('');
   document.getElementById('battle-status-msg').textContent = '';
-  submitMyAction();
+
+  if (gameMode === 'solo') {
+    // CPUのアクションをすぐに決定
+    const cpuAction = getCPUAction();
+    battle.enemySelectedHand = cpuAction.hand;
+    battle.enemySelectedCards = cpuAction.cards;
+
+    if (battle.playerPeekReselect) {
+      showPeekReselectUI(battle.enemySelectedHand);
+    } else {
+      resolveRound();
+    }
+  } else {
+    setArenaStatus('相手の行動を待っています...');
+    submitMyAction();
+  }
 }
 
 function showPeekReselectUI(enemyHand) {
@@ -2425,6 +2563,11 @@ function confirmPeekAction() {
   document.getElementById('enemy-hand-emoji').style.filter = '';
   const btn = document.getElementById('battle-confirm-btn');
   btn.dataset.peekMode = '0';
+
+  if (gameMode === 'solo') {
+    resolveRound();
+    return;
+  }
 
   // Promiseベースのコールバックで再開
   if (window._peekResumeCallback) {
@@ -2586,6 +2729,7 @@ function setArenaStatus(msg) {
 // type: 'stealCards' | 'snatchCard' | 'peekHand'
 // payload: 効果に応じたデータ
 async function publishInteraction(type, payload) {
+  if (!roomId || !window._FB) return; // solo mode: no-op
   const { db, ref, set } = window._FB;
   const myKey = myRole;
   const path = `rooms/${roomId}/turns/${battle.turn}/interaction/${myKey}`;
@@ -2594,6 +2738,7 @@ async function publishInteraction(type, payload) {
 
 // 相手のインタラクション結果を待って受け取る（タイムアウト30秒）
 async function waitForEnemyInteraction(expectedType) {
+  if (!roomId || !window._FB) return null; // solo mode: CPU doesn't interact
   const { db, ref, onValue, off } = window._FB;
   const enemyKey = myRole === 'host' ? 'guest' : 'host';
   const path = `rooms/${roomId}/turns/${battle.turn}/interaction/${enemyKey}`;
@@ -3546,7 +3691,7 @@ function endBattle() {
   _battleStarted = false;
   _matchingActive = false;
 
-  if (roomId && window._FB) {
+  if (roomId && window._FB && gameMode !== 'solo') {
     const { db, ref, set, remove } = window._FB;
     const myKey = myRole || 'host';
     // 自分の結果確認フラグを書き込む（相手が結果を受け取れるように遅延削除）
@@ -3840,6 +3985,121 @@ function buildSoundControls() {
     <button id="btn-bgm" onclick="onToggleBgm()" style="${btnStyle}">🎵</button>
     <button id="btn-sfx" onclick="onToggleSfx()" style="${btnStyle}">🔊</button>
   `;
+}
+
+/* ── Deck Save/Load System ── */
+function getSavedDecks() {
+  try {
+    return JSON.parse(localStorage.getItem('janken_saved_decks') || '[]');
+  } catch(e) { return []; }
+}
+
+function saveDeckToStorage(name, deck) {
+  const decks = getSavedDecks();
+  // 同名なら上書き
+  const existing = decks.findIndex(d => d.name === name);
+  const entry = { name, deck, savedAt: Date.now() };
+  if (existing >= 0) decks[existing] = entry;
+  else decks.push(entry);
+  if (decks.length > 10) decks.splice(0, decks.length - 10); // 最大10件
+  localStorage.setItem('janken_saved_decks', JSON.stringify(decks));
+}
+
+function deleteSavedDeck(name) {
+  const decks = getSavedDecks().filter(d => d.name !== name);
+  localStorage.setItem('janken_saved_decks', JSON.stringify(decks));
+}
+
+// 勝敗画面から保存 - モーダルUIを使用
+function saveDeckPrompt() {
+  const modal = document.getElementById('save-deck-modal');
+  const input = document.getElementById('save-deck-name-input');
+  const msg   = document.getElementById('save-deck-msg');
+  input.value = 'MY DECK';
+  msg.textContent = '';
+  modal.style.opacity = '1';
+  modal.style.pointerEvents = 'all';
+  setTimeout(() => input.focus(), 100);
+}
+
+function closeSaveDeckModal() {
+  const modal = document.getElementById('save-deck-modal');
+  modal.style.opacity = '0';
+  modal.style.pointerEvents = 'none';
+}
+
+function confirmSaveDeck() {
+  const input   = document.getElementById('save-deck-name-input');
+  const msg     = document.getElementById('save-deck-msg');
+  const trimmed = (input.value || '').trim().substring(0, 12);
+  if (!trimmed) {
+    msg.textContent = '⚠ デッキ名を入力してください';
+    msg.style.color = 'var(--accent2)';
+    return;
+  }
+  saveDeckToStorage(trimmed, [...playerDeck]);
+  msg.textContent = `✓ 「${trimmed}」を保存しました！`;
+  msg.style.color = 'var(--accent3)';
+  setTimeout(() => closeSaveDeckModal(), 1200);
+}
+
+// デッキ選択画面の歯車→モーダルを開く
+function openDeckManager() {
+  const modal = document.getElementById('deck-manager-modal');
+  modal.style.opacity = '1';
+  modal.style.pointerEvents = 'all';
+  renderDeckManagerList();
+}
+
+function closeDeckManager() {
+  const modal = document.getElementById('deck-manager-modal');
+  modal.style.opacity = '0';
+  modal.style.pointerEvents = 'none';
+}
+
+function renderDeckManagerList() {
+  const list = document.getElementById('deck-manager-list');
+  const decks = getSavedDecks();
+  if (decks.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px;font-family:\'Orbitron\',monospace;">保存されたデッキはありません</div>';
+    return;
+  }
+  list.innerHTML = '';
+  decks.forEach(entry => {
+    const cost = entry.deck.reduce((s, id) => s + (getCard(id)?.cost || 0), 0);
+    const div = document.createElement('div');
+    div.style.cssText = `background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;`;
+    div.innerHTML = `
+      <div style="flex:1;">
+        <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);font-weight:700;">${entry.name}</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${entry.deck.length}枚 / COST ${cost}</div>
+      </div>
+      <button onclick="loadSavedDeck('${entry.name}')" style="background:linear-gradient(135deg,var(--accent3),#ff8c00);color:#1a0800;border:none;border-radius:8px;padding:8px 14px;font-family:'Orbitron',monospace;font-size:11px;cursor:pointer;font-weight:700;">USE</button>
+      <button onclick="confirmDeleteDeck('${entry.name}')" style="background:rgba(255,0,110,0.15);border:1px solid var(--accent2);color:var(--accent2);border-radius:8px;padding:8px 10px;font-family:'Orbitron',monospace;font-size:11px;cursor:pointer;">✕</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function loadSavedDeck(name) {
+  const decks = getSavedDecks();
+  const entry = decks.find(d => d.name === name);
+  if (!entry) return;
+  // deckSelection を復元
+  deckSelection = {};
+  entry.deck.forEach(id => {
+    deckSelection[id] = (deckSelection[id] || 0) + 1;
+  });
+  closeDeckManager();
+  renderCardGrid();
+  updateDeckCostDisplay();
+  Audio.sfx('confirm');
+}
+
+function confirmDeleteDeck(name) {
+  if (!confirm(`「${name}」を削除しますか？`)) return;
+  deleteSavedDeck(name);
+  renderDeckManagerList();
 }
 
 // ============================================================
