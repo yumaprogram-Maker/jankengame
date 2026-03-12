@@ -2439,7 +2439,7 @@ async function submitMyAction() {
     if (!snap.exists() || resolved) return;
     resolved = true;
     clearTimeout(timeoutId);
-    try { off(enemyRef, unsubscribe); } catch(e) {}
+    try { unsubscribe(); } catch(e) {}
 
     const enemyAction = snap.val();
     battle.enemySelectedHand  = enemyAction.hand;
@@ -2475,7 +2475,7 @@ async function submitMyAction() {
   timeoutId = setTimeout(() => {
     if (resolved) return;
     resolved = true;
-    try { off(enemyRef, unsubscribe); } catch(e) {}
+    try { unsubscribe(); } catch(e) {}
     setArenaStatus('⚠️ 相手との接続が切れました。');
     document.getElementById('battle-status-msg').textContent = '相手が応答しませんでした。';
     showHandSelectArea(true);
@@ -2526,13 +2526,13 @@ async function waitForEnemyInteraction(expectedType) {
       if (data.type !== expectedType) return;
       resolved = true;
       clearTimeout(tid);
-      try { off(ref(db, path), unsub); } catch(e) {}
+      try { unsub(); } catch(e) {}
       resolve(data.payload);
     });
     tid = setTimeout(() => {
       if (resolved) return;
       resolved = true;
-      try { off(ref(db, path), unsub); } catch(e) {}
+      try { unsub(); } catch(e) {}
       resolve(null); // タイムアウト
     }, 30000);
   });
