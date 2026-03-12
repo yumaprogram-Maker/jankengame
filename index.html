@@ -1479,6 +1479,18 @@ const CARD_DB = [
     desc:'相手HP-4、自HP+4', detail:'蜘蛛の糸で相手を縛り生命力を吸い取る。相手のHPを4吸収する小型吸収カード。', effect:{drain:4} },
   { id:'b18', rank:'B', name:'光の加護', icon:'😇', cost:5,
     desc:'HP12回復', detail:'天使の加護でHPを大きく回復。コストB帯では最大級のHP12回復カード。', effect:{heal:12} },
+  { id:'b19', rank:'B', name:'エクストラチャンス', icon:'🎴', cost:5,
+    desc:'次のターン1枚追加ドロー', detail:'余力を残して次のターンに備える。次のターンのドロー枚数を+1増加させる軽量サポートカード。', effect:{extraDraw:1} },
+  { id:'b20', rank:'B', name:'毒霧散布', icon:'☠️', cost:5,
+    desc:'相手HP-5 直接ダメ', detail:'毒の霧を相手に浴びせる。じゃんけん結果に関係なく相手に直接5ダメージを与える毒属性カード。', effect:{directDmgEnemy:5} },
+  { id:'b21', rank:'B', name:'捨て身の一撃', icon:'🪃', cost:5,
+    desc:'自HP-5、ダメージ+12', detail:'自らを投げ捨てて放つ渾身の攻撃。HP5を犠牲にし与ダメ+12を得る。', effect:{selfDmg:5, dmgUp:12} },
+  { id:'b22', rank:'B', name:'砂嵐の壁', icon:'🌪️', cost:5,
+    desc:'被ダメ-7', detail:'砂嵐を巻き起こし攻撃を遮る。このターンの被ダメを7軽減するBランク防御特化カード。', effect:{dmgReduce:7} },
+  { id:'b23', rank:'B', name:'幸運の草', icon:'🍀', cost:5,
+    desc:'HP6回復 + ダメージ+2', detail:'四つ葉のクローバーが小さな幸運をもたらす。HP6回復と与ダメ+2の軽量複合カード。', effect:{heal:6, dmgUp:2} },
+  { id:'b24', rank:'B', name:'反骨心', icon:'💢', cost:5,
+    desc:'被ダメ-3 + ダメージ+4', detail:'くじけない気持ちが反撃の刃となる。被ダメ-3と与ダメ+4を同時に得る均衡型カード。', effect:{dmgReduce:3, dmgUp:4} },
 
   // === NEW S RANK (cost 20) ===
   { id:'s11', rank:'S', name:'神罰の雷', icon:'⚡', cost:20,
@@ -1539,9 +1551,19 @@ const CARD_DB = [
   { id:'s24', rank:'S', name:'ダメージリターン2x', icon:'🔁', cost:20,
     desc:'受けたダメージを2倍返し', detail:'最強の反射魔法。このターン自分が受けたダメージを2倍にして相手に返す。', effect:{counterMultiplier:2.0} },
   { id:'s25', rank:'S', name:'殉教者の呪い', icon:'💀', cost:20,
-    desc:'被ダメ3倍・必ず負け、生存で2倍返し', detail:'己を犠牲にする究極の賭け。このターン相手から受けるダメージが3倍になり必ずじゃんけんに負ける。しかし生き残れた場合、受けたダメージをさらに2倍にして相手に返す。', effect:{martyrdom:true} },
+    desc:'被ダメ3倍・必ず負け、生存で同量返し', detail:'己を犠牲にする究極の賭け。このターン相手から受けるダメージが3倍になり必ずじゃんけんに負ける。しかし生き残れた場合、受けた同量のダメージをそのまま相手に返す。', effect:{martyrdom:true} },
   { id:'s26', rank:'S', name:'カードスティール', icon:'🕵️', cost:20,
     desc:'相手のドロー済みカード2枚を次ターンデッキに戻す', detail:'相手の手札に忍び込み、カード2枚を奪い去る。相手のドロー済みカード2枚を選択し、次のターン相手のデッキに戻す。', effect:{stealCards:2} },
+  { id:'s27', rank:'S', name:'絶対覇道', icon:'👑', cost:20,
+    desc:'ダメージ+18 + 被ダメ-10 + HP10回復', detail:'王者の力が全てを圧倒する。与ダメ+18、被ダメ-10、HP10回復を同時発動する究極の万能カード。', effect:{dmgUp:18, dmgReduce:10, heal:10} },
+  { id:'s28', rank:'S', name:'真空斬', icon:'🌬️', cost:20,
+    desc:'ダメージ+30 + 自HP-15', detail:'真空の刃で全てを切り裂く。HP15を代償にこのターンの与ダメ+30を得る超高火力カード。HP管理必須。', effect:{dmgUp:30, selfDmg:15} },
+  { id:'s29', rank:'S', name:'不死の誓い', icon:'💎', cost:20,
+    desc:'このターン受けたダメージを0にし HP30回復', detail:'不死の誓いが傷を完全に防ぐ。完全シールド発動かつHP30も回復する究極の生存カード。', effect:{shield:999, heal:30} },
+  { id:'s30', rank:'S', name:'次元爆弾', icon:'💣', cost:20,
+    desc:'相手HP-25 直接ダメ + 自HP-5', detail:'次元の歪みで爆発を引き起こす。自HP5を犠牲にし相手に直接25ダメージを与える最強直撃カード。', effect:{directDmgEnemy:25, selfDmg:5} },
+  { id:'s31', rank:'S', name:'運命逆転', icon:'🃏', cost:20,
+    desc:'自分と相手のHPを入れ替える', detail:'運命を書き換える禁断の魔法。自分と相手のHPを完全に入れ替える。劣勢の時こそ真価を発揮する逆転専用Sカード。', effect:{swapHP:true} },
 
   // A rank
   { id:'a23', rank:'A', name:'ダメージリターン1.5x', icon:'⚡', cost:10,
@@ -1550,6 +1572,16 @@ const CARD_DB = [
     desc:'相手の手札から1枚を自手札に加える', detail:'相手の手札に手を伸ばし、カードを1枚奪い取る。相手の手札から1枚選択して自分の手札に加える。', effect:{snatchCard:1} },
   { id:'a25', rank:'A', name:'ダブルリスク', icon:'⚠️', cost:10,
     desc:'両者の受けるダメージが2倍になる', detail:'危険な賭けに出る。このターン自分と相手の双方が受けるダメージが2倍になる諸刃の剣カード。', effect:{doubleAllDamage:true} },
+  { id:'a26', rank:'A', name:'大地の守護', icon:'🌍', cost:10,
+    desc:'被ダメ-10 + HP5回復', detail:'大地の力が全身を包んで守る。被ダメ-10とHP5回復を同時に発動する鉄壁の防御カード。', effect:{dmgReduce:10, heal:5} },
+  { id:'a27', rank:'A', name:'烈火拳', icon:'🔥', cost:10,
+    desc:'ダメージ+15 + 自HP-3', detail:'己を燃やし尽くす炎の拳。HP3を代償にこのターンの与ダメ+15を得る高火力カード。', effect:{dmgUp:15, selfDmg:3} },
+  { id:'a28', rank:'A', name:'影分身', icon:'👥', cost:10,
+    desc:'相手HP-8 直接ダメ', detail:'影が実体を持ち相手を直接攻撃する。じゃんけん結果に関わらず相手に直接8ダメージを与える。', effect:{directDmgEnemy:8} },
+  { id:'a29', rank:'A', name:'フェニックスブレス', icon:'🦅', cost:10,
+    desc:'HP12回復 + ダメージ+5', detail:'不死鳥の炎が体を癒し力をみなぎらせる。HP12回復と与ダメ+5を同時に発動するバランス型カード。', effect:{heal:12, dmgUp:5} },
+  { id:'a30', rank:'A', name:'雷鳴連打', icon:'⚡', cost:10,
+    desc:'あいこ時追加ダメ+10 + ダメージ+5', detail:'連続する雷撃で相手を圧倒する。通常の与ダメ+5に加え、あいこ時にも追加で10ダメージを与える攻撃カード。', effect:{dmgUp:5, drawDmg:10} },
 ];
 
 // ============================================================
@@ -2175,6 +2207,7 @@ function startSoloBattle() {
   roomId = null; roomRef = null;
   _battleStarted = true;
   _matchingActive = false;
+  _battleEndTriggered = false;
   enemyName = 'CPU';
 
   const aiDeck = buildAIDeck();
@@ -2228,6 +2261,12 @@ function getCPUAction() {
 const MAX_HAND = 10;
 
 function startTurn() {
+  // HP0チェック：ターン開始前に既にHP0なら即勝敗判定
+  if (battle.playerHP <= 0 || battle.enemyHP <= 0) {
+    endBattle();
+    return;
+  }
+
   battle.selectedHand = null;
   battle.selectedCards = [];
   battle.phase = 'select';
@@ -3076,6 +3115,15 @@ async function applyCardEffect(owner, cardId) {
     battle.playerDoubleAllDamage = true;
     battle.enemyDoubleAllDamage = true;
   }
+  if (e.swapHP) {
+    // 自分と相手のHPを入れ替える
+    const tmp = battle.playerHP;
+    battle.playerHP = battle.enemyHP;
+    battle.enemyHP = tmp;
+    updateHPDisplay();
+    spawnEffectToast('💎 HP逆転！', '#ffd600', true);
+    Audio.sfx('confirm');
+  }
 
   // ── 通信同期が必要なインタラクティブ効果 ──
 
@@ -3419,17 +3467,17 @@ function resolveHandBattle() {
     }
 
     // ── 殉教返し：発動時のHPではなく、ダメージを受ける直前のHP（受けたダメージを差し引く前）を見て判定 ──
-    // 「生存していれば」= 最終的なHPが0より大きい場合に返す
+    // 「生存していれば」= 最終的なHPが0より大きい場合に返す（受けたダメージと同量を相手に与える）
     if (battle.playerMartyrdom && battle.playerHP > 0 && playerTookDmg > 0) {
-      const retDmg = playerTookDmg * 2;
+      const retDmg = playerTookDmg;
       battle.enemyHP = Math.max(0, battle.enemyHP - retDmg);
-      breakdown.push({ target:'enemy', icon:'💀', label:'殉教 2倍返し', delta:-retDmg, type:'martyrdom' });
+      breakdown.push({ target:'enemy', icon:'💀', label:'殉教 同量返し', delta:-retDmg, type:'martyrdom' });
       updateHPDisplay();
     }
     if (battle.enemyMartyrdom && battle.enemyHP > 0 && enemyTookDmg > 0) {
-      const retDmg = enemyTookDmg * 2;
+      const retDmg = enemyTookDmg;
       battle.playerHP = Math.max(0, battle.playerHP - retDmg);
-      breakdown.push({ target:'player', icon:'💀', label:'殉教 2倍返し', delta:-retDmg, type:'martyrdom' });
+      breakdown.push({ target:'player', icon:'💀', label:'殉教 同量返し', delta:-retDmg, type:'martyrdom' });
       updateHPDisplay();
     }
 
@@ -3590,6 +3638,11 @@ let _dmgTapCallback = null;
 
 function waitDamageBreakdownTap(callback) {
   const panel = document.getElementById('dmg-breakdown-panel');
+  // パネルが表示されていない場合は即座にコールバック
+  if (!panel.classList.contains('show')) {
+    setTimeout(callback, 400); // 短い遅延後に実行
+    return;
+  }
   _dmgTapCallback = callback;
   const onTap = (e) => {
     if (_dmgTapCallback) {
