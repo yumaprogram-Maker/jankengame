@@ -1348,18 +1348,34 @@ body {
 
     <!-- BOTTOM: SELECT -->
     <div class="hand-select-area" id="hand-select-area">
-      <!-- 相手の予告バナー -->
-      <div id="enemy-decl-banner" style="display:none;
-        background:linear-gradient(135deg,rgba(255,0,110,0.18),rgba(255,80,0,0.12));
-        border:1.5px solid rgba(255,80,80,0.5); border-radius:10px;
-        padding:7px 14px; margin:0 0 8px;
-        display:none; align-items:center; gap:8px;
-        font-family:'Orbitron',monospace; font-size:12px; letter-spacing:1px;
-      ">
-        <span style="font-size:18px;">📣</span>
-        <span style="color:var(--text-dim); font-size:10px;">相手の予告</span>
-        <span id="enemy-decl-banner-emoji" style="font-size:22px; line-height:1;"></span>
-        <span id="enemy-decl-banner-text" style="color:#ff8c00; font-weight:700;"></span>
+      <!-- 予告バナー行（自分・相手） -->
+      <div id="decl-banners-row" style="display:none; gap:8px; margin:0 0 8px; width:100%;">
+        <!-- 自分の予告バナー -->
+        <div id="player-decl-banner" style="
+          background:linear-gradient(135deg,rgba(0,180,255,0.18),rgba(0,245,255,0.10));
+          border:1.5px solid rgba(0,200,255,0.5); border-radius:10px;
+          padding:7px 12px; flex:1;
+          display:flex; align-items:center; gap:6px;
+          font-family:'Orbitron',monospace; font-size:12px; letter-spacing:1px;
+        ">
+          <span style="font-size:18px;">📣</span>
+          <span style="color:var(--text-dim); font-size:10px;">自分の予告</span>
+          <span id="player-decl-banner-emoji" style="font-size:22px; line-height:1;"></span>
+          <span id="player-decl-banner-text" style="color:var(--accent); font-weight:700;"></span>
+        </div>
+        <!-- 相手の予告バナー -->
+        <div id="enemy-decl-banner" style="
+          background:linear-gradient(135deg,rgba(255,0,110,0.18),rgba(255,80,0,0.12));
+          border:1.5px solid rgba(255,80,80,0.5); border-radius:10px;
+          padding:7px 12px; flex:1;
+          display:flex; align-items:center; gap:6px;
+          font-family:'Orbitron',monospace; font-size:12px; letter-spacing:1px;
+        ">
+          <span style="font-size:18px;">📣</span>
+          <span style="color:var(--text-dim); font-size:10px;">相手の予告</span>
+          <span id="enemy-decl-banner-emoji" style="font-size:22px; line-height:1;"></span>
+          <span id="enemy-decl-banner-text" style="color:#ff8c00; font-weight:700;"></span>
+        </div>
       </div>
       <div class="hand-select-label">SELECT YOUR MOVE</div>
       <div class="rps-btns">
@@ -2585,24 +2601,38 @@ function afterDeclarationPhase() {
   msg.textContent = '手とカードを選択してください';
   document.getElementById('battle-confirm-btn').style.display = 'none';
 
-  // 相手の予告を専用バナーに表示
-  const banner = document.getElementById('enemy-decl-banner');
+  // 予告バナーを表示（自分・相手）
+  const bannersRow = document.getElementById('decl-banners-row');
+  const playerBannerEmoji = document.getElementById('player-decl-banner-emoji');
+  const playerBannerText  = document.getElementById('player-decl-banner-text');
   const bannerEmoji = document.getElementById('enemy-decl-banner-emoji');
-  const bannerText = document.getElementById('enemy-decl-banner-text');
+  const bannerText  = document.getElementById('enemy-decl-banner-text');
   const RPS_EMOJI_MAP = { guu:'✊', paa:'✋', choki:'✌️' };
   const RPS_NAME_JP   = { guu:'グー', paa:'パー', choki:'チョキ' };
 
+  // 自分の予告
+  if (battle.playerDeclaration) {
+    playerBannerEmoji.textContent = RPS_EMOJI_MAP[battle.playerDeclaration];
+    playerBannerText.textContent  = RPS_NAME_JP[battle.playerDeclaration];
+  } else {
+    playerBannerEmoji.textContent = '🤐';
+    playerBannerText.textContent  = '予告なし';
+  }
+
+  // 相手の予告
   if (battle.enemyDeclaration) {
     bannerEmoji.textContent = RPS_EMOJI_MAP[battle.enemyDeclaration];
     bannerText.textContent  = RPS_NAME_JP[battle.enemyDeclaration];
-    banner.style.display = 'flex';
   } else if (battle.enemyDeclaration === null) {
     bannerEmoji.textContent = '🤐';
     bannerText.textContent  = '予告なし';
-    banner.style.display = 'flex';
   } else {
-    banner.style.display = 'none';
+    bannerEmoji.textContent = '…';
+    bannerText.textContent  = '';
   }
+
+  // 行全体を表示
+  bannersRow.style.display = 'flex';
   setArenaStatus('');
 }
 
@@ -2880,9 +2910,9 @@ function confirmAction() {
   showHandSelectArea(false);
   setArenaStatus('');
   document.getElementById('battle-status-msg').textContent = '';
-  // 予告バナーを非表示
-  const banner = document.getElementById('enemy-decl-banner');
-  if (banner) banner.style.display = 'none';
+  // 予告バナー行を非表示
+  const bannersRowHide = document.getElementById('decl-banners-row');
+  if (bannersRowHide) bannersRowHide.style.display = 'none';
 
   if (gameMode === 'solo') {
     // CPUのアクションをすぐに決定
