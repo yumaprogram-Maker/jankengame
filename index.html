@@ -922,7 +922,10 @@ body {
 .dmg-step-val.minus { color: #00f5ff; text-shadow: 0 0 8px #00f5ff; }
 .dmg-step-val.base  { color: #aaaacc; }
 .dmg-step-val.total { color: #ffd600; font-size: 20px; text-shadow: 0 0 12px #ffd600; }
+.dmg-total-row .dmg-step-val.heal { color: #00ff88; font-size: 20px; text-shadow: 0 0 12px #00ff88; }
+.dmg-total-row .dmg-step-val.base { color: #aaaacc; font-size: 20px; }
 .dmg-step-val.martyrdom { color: #ff006e; text-shadow: 0 0 12px #ff006e; }
+.dmg-step-val.heal  { color: #00ff88; text-shadow: 0 0 8px #00ff88; }
 .dmg-divider {
   width: 100%; height: 1px;
   background: linear-gradient(90deg, transparent, var(--border), transparent);
@@ -2813,11 +2816,15 @@ async function resolveRound() {
   );
 
   if (revealQueue.length === 0) {
+    window._cardBreakdown = [];
+    window._hpBeforeCards = { player: battle.playerHP, enemy: battle.enemyHP };
     resolveHandBattle();
     return;
   }
 
   window._revealQueue = revealQueue;
+  window._cardBreakdown = [];
+  window._hpBeforeCards = { player: battle.playerHP, enemy: battle.enemyHP };
   document.getElementById('resolution-overlay').style.display = 'flex';
   renderSpotlight(revealQueue, 0);
 }
@@ -2922,7 +2929,7 @@ async function nextCardReveal() {
   const item = queue[idx];
   if (item) {
     Audio.sfx('activate');
-    await applyCardEffect(item.owner, item.cardId);
+    await applyCardEffect(item.owner, item.cardId, window._cardBreakdown);
     const card = getCard(item.cardId);
     if (card) {
       spawnEffectToast(card.desc, RANK_GLOW_COLOR[card.rank] || '#fff', item.owner === 'player');
@@ -2958,11 +2965,12 @@ function spawnEffectToast(text, color, isPlayer) {
   setTimeout(() => el.remove(), 1300);
 }
 
-async function applyCardEffect(owner, cardId) {
+async function applyCardEffect(owner, cardId, breakdown) {
   const card = getCard(cardId);
   if (!card) return;
   const e = card.effect;
   const isPlayer = owner === 'player';
+  const cardLabel = `${card.icon}${card.name}`;
 
   if (e.heal) {
     if (isPlayer) { battle.playerHP = Math.min(100, battle.playerHP + e.heal); }
@@ -2970,6 +2978,7 @@ async function applyCardEffect(owner, cardId) {
     updateHPDisplay();
     spawnDmgNumber('+' + e.heal, isPlayer ? '#00ff88' : '#ff8c00', isPlayer);
     Audio.sfx('heal');
+    if (breakdown) breakdown.push({ target: isPlayer ? 'player' : 'enemy', icon: '💚', label: `${cardLabel} 回復`, delta: +e.heal, type: 'heal' });
   }
   if (e.dmgUp) {
     if (isPlayer) battle.playerDmgUp += e.dmgUp;
@@ -2992,9 +3001,17 @@ async function applyCardEffect(owner, cardId) {
     if (isPlayer) {
       battle.enemyHP = Math.max(0, battle.enemyHP - e.drain);
       battle.playerHP = Math.min(100, battle.playerHP + e.drain);
+      if (breakdown) {
+        breakdown.push({ target: 'enemy', icon: '🩸', label: `${cardLabel} ドレイン`, delta: -e.drain, type: 'plus' });
+        breakdown.push({ target: 'player', icon: '💚', label: `${cardLabel} ドレイン回復`, delta: +e.drain, type: 'heal' });
+      }
     } else {
       battle.playerHP = Math.max(0, battle.playerHP - e.drain);
       battle.enemyHP = Math.min(100, battle.enemyHP + e.drain);
+      if (breakdown) {
+        breakdown.push({ target: 'player', icon: '🩸', label: `${cardLabel} ドレイン`, delta: -e.drain, type: 'plus' });
+        breakdown.push({ target: 'enemy', icon: '💚', label: `${cardLabel} ドレイン回復`, delta: +e.drain, type: 'heal' });
+      }
     }
     updateHPDisplay();
     Audio.sfx('damage');
@@ -3003,8 +3020,10 @@ async function applyCardEffect(owner, cardId) {
     if (isPlayer) {
       battle.playerHP = Math.max(0, battle.playerHP - e.selfDmg);
       spawnDmgNumber('-' + e.selfDmg, '#ff8c00', true);
+      if (breakdown) breakdown.push({ target: 'player', icon: '⚡', label: `${cardLabel} 自傷`, delta: -e.selfDmg, type: 'plus' });
     } else {
       battle.enemyHP = Math.max(0, battle.enemyHP - e.selfDmg);
+      if (breakdown) breakdown.push({ target: 'enemy', icon: '⚡', label: `${cardLabel} 自傷`, delta: -e.selfDmg, type: 'plus' });
     }
     updateHPDisplay();
   }
@@ -3016,9 +3035,11 @@ async function applyCardEffect(owner, cardId) {
     if (isPlayer) {
       battle.enemyHP = Math.max(0, battle.enemyHP - e.directDmgEnemy);
       spawnDmgNumber('-' + e.directDmgEnemy, '#ff006e', false);
+      if (breakdown) breakdown.push({ target: 'enemy', icon: '🗡️', label: `${cardLabel} 直接ダメ`, delta: -e.directDmgEnemy, type: 'plus' });
     } else {
       battle.playerHP = Math.max(0, battle.playerHP - e.directDmgEnemy);
       spawnDmgNumber('-' + e.directDmgEnemy, '#ff006e', true);
+      if (breakdown) breakdown.push({ target: 'player', icon: '🗡️', label: `${cardLabel} 直接ダメ`, delta: -e.directDmgEnemy, type: 'plus' });
     }
     updateHPDisplay();
     Audio.sfx('damage');
@@ -3029,6 +3050,7 @@ async function applyCardEffect(owner, cardId) {
     updateHPDisplay();
     spawnDmgNumber('+' + e.healBonus, '#00ff88', isPlayer);
     Audio.sfx('heal');
+    if (breakdown) breakdown.push({ target: isPlayer ? 'player' : 'enemy', icon: '💚', label: `${cardLabel} ボーナス回復`, delta: +e.healBonus, type: 'heal' });
   }
   if (e.forceEnemyRandom) {
     const hands = ['guu','paa','choki'];
@@ -3314,6 +3336,14 @@ function resolveHandBattle() {
     let playerForcedLose = battle.playerMartyrdom;
     let enemyForcedLose  = battle.enemyMartyrdom;
 
+    // 両者同時に殉教者を出した場合は効果が打ち消しあい、どちらも無効
+    if (playerForcedLose && enemyForcedLose) {
+      playerForcedLose = false;
+      enemyForcedLose  = false;
+      battle.playerMartyrdom = false;
+      battle.enemyMartyrdom  = false;
+    }
+
     // Recalculate result if martyrdom active
     let effectiveResult = result;
     if (playerForcedLose && !enemyForcedLose) effectiveResult = 'enemy';
@@ -3325,37 +3355,34 @@ function resolveHandBattle() {
     const breakdown = [];
 
     if (effectiveResult === 'draw') {
-      let baseDraw = 5;
+      // あいこ時の基本ダメージもターン経過で増加（3ターンごとに+2、ターン1-3:5, 4-6:7, 7-9:9, ...）
+      let baseDraw = 5 + Math.floor((battle.turn - 1) / 3) * 2;
       let pDmgMult = (battle.playerDoubleAllDamage || battle.enemyDoubleAllDamage) ? 2 : 1;
       let eDmgMult = pDmgMult;
 
       if (!battle.playerShield) {
-        let d = Math.max(0, baseDraw - battle.playerDmgReduce) * pDmgMult;
-        if (d > 0) {
-          breakdown.push({ target:'player', icon:'🤜', label:'あいこ基本', delta:-d, type:'base' });
-          playerTookDmg += d;
+        breakdown.push({ target:'player', icon:'🤜', label:'あいこ基本', delta:-baseDraw, type:'base' });
+        if (pDmgMult === 2) {
+          breakdown.push({ target:'player', icon:'⚠️', label:'ダブルリスク×2', delta:-baseDraw, type:'plus' });
         }
+        if (battle.playerDmgReduce > 0) {
+          breakdown.push({ target:'player', icon:'🔷', label:'被ダメ軽減', delta:+battle.playerDmgReduce, type:'minus' });
+        }
+        playerTookDmg += Math.max(0, baseDraw - battle.playerDmgReduce) * pDmgMult;
       } else {
         breakdown.push({ target:'player', icon:'🛡️', label:'シールド', delta:0, type:'minus' });
       }
-      if (battle.playerDmgReduce > 0 && !battle.playerShield) {
-        breakdown.push({ target:'player', icon:'🔷', label:'被ダメ軽減', delta:+battle.playerDmgReduce, type:'minus' });
-      }
       if (!battle.enemyShield) {
-        let d = Math.max(0, baseDraw - battle.enemyDmgReduce) * eDmgMult;
-        if (d > 0) {
-          breakdown.push({ target:'enemy', icon:'🤜', label:'あいこ基本', delta:-d, type:'base' });
-          enemyTookDmg += d;
+        breakdown.push({ target:'enemy', icon:'🤜', label:'あいこ基本', delta:-baseDraw, type:'base' });
+        if (eDmgMult === 2) {
+          breakdown.push({ target:'enemy', icon:'⚠️', label:'ダブルリスク×2', delta:-baseDraw, type:'plus' });
         }
+        if (battle.enemyDmgReduce > 0) {
+          breakdown.push({ target:'enemy', icon:'🔷', label:'被ダメ軽減', delta:+battle.enemyDmgReduce, type:'minus' });
+        }
+        enemyTookDmg += Math.max(0, baseDraw - battle.enemyDmgReduce) * eDmgMult;
       } else {
         breakdown.push({ target:'enemy', icon:'🛡️', label:'シールド', delta:0, type:'minus' });
-      }
-      if (battle.enemyDmgReduce > 0 && !battle.enemyShield) {
-        breakdown.push({ target:'enemy', icon:'🔷', label:'被ダメ軽減', delta:+battle.enemyDmgReduce, type:'minus' });
-      }
-      if (pDmgMult === 2) {
-        breakdown.push({ target:'player', icon:'⚠️', label:'ダブルリスク×2', delta:0, type:'plus' });
-        breakdown.push({ target:'enemy', icon:'⚠️', label:'ダブルリスク×2', delta:0, type:'plus' });
       }
       if (battle.playerDrawDmg) {
         breakdown.push({ target:'enemy', icon:'⚔️', label:'追加ダメ', delta:-battle.playerDrawDmg, type:'plus' });
@@ -3499,8 +3526,11 @@ function resolveHandBattle() {
     // ── HPをFirebaseに書き込んで同期 ──
     _syncMyHPToFirebase();
 
-    // ── ダメージ内訳演出 ──
-    showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveResult);
+    // ── ダメージ内訳演出（カード効果分を先に追加） ──
+    const cardBreakdown = window._cardBreakdown || [];
+    const fullBreakdown = [...cardBreakdown, ...breakdown];
+    const hpBefore = window._hpBeforeCards || { player: battle.playerHP + playerTookDmg, enemy: battle.enemyHP + enemyTookDmg };
+    showDamageBreakdown(fullBreakdown, playerTookDmg, enemyTookDmg, effectiveResult, hpBefore);
 
     showRoundResult(result, ph, eh, playerTookDmg, enemyTookDmg);
     if (playerTookDmg > 0) { flashScreen('flash-red'); Audio.sfx('damage'); }
@@ -3525,7 +3555,7 @@ function resolveHandBattle() {
   }, 1600);
 }
 
-function showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveResult) {
+function showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveResult, hpBefore) {
   const panel = document.getElementById('dmg-breakdown-panel');
   const inner = document.getElementById('dmg-breakdown-inner');
   inner.innerHTML = '';
@@ -3567,7 +3597,10 @@ function showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveRe
       let valClass = 'base';
       let displayDelta = step.delta;
 
-      if (step.delta < 0) {
+      if (step.type === 'heal') {
+        valClass = 'heal';
+        displayDelta = step.delta;
+      } else if (step.delta < 0) {
         valClass = step.type === 'martyrdom' ? 'martyrdom' : 'plus';
         displayDelta = step.delta;
       } else if (step.delta > 0) {
@@ -3578,7 +3611,8 @@ function showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveRe
         displayDelta = 0;
       }
 
-      const dispStr = displayDelta < 0 ? displayDelta : (displayDelta > 0 ? '+' + displayDelta : '→0');
+      const dispStr = step.type === 'heal' ? '+' + step.delta :
+                      (displayDelta < 0 ? displayDelta : (displayDelta > 0 ? '+' + displayDelta : '→0'));
 
       row.innerHTML = `
         <span class="dmg-step-icon">${step.icon}</span>
@@ -3595,15 +3629,41 @@ function showDamageBreakdown(breakdown, playerTookDmg, enemyTookDmg, effectiveRe
     inner.appendChild(div);
     stepDelay += 80;
 
-    // 合計
-    const total = isPlayer ? playerTookDmg : enemyTookDmg;
+    // HP純変化を計算（ターン前HP - 現在HP = 差分）
+    let netHpChange = 0;
+    if (hpBefore) {
+      const hpNow = isPlayer ? battle.playerHP : battle.enemyHP;
+      const hpPrev = isPlayer ? hpBefore.player : hpBefore.enemy;
+      netHpChange = hpNow - hpPrev; // 正=回復、負=減少
+    } else {
+      // フォールバック: breakdownのdeltaを合算
+      const dmgTotal = -(isPlayer ? playerTookDmg : enemyTookDmg);
+      const healTotal = steps
+        .filter(s => s.type === 'heal')
+        .reduce((sum, s) => sum + s.delta, 0);
+      netHpChange = dmgTotal + healTotal;
+    }
+
     const totalRow = document.createElement('div');
     totalRow.className = 'dmg-total-row';
     totalRow.style.animationDelay = stepDelay + 'ms';
+
+    let totalStr, totalClass;
+    if (netHpChange < 0) {
+      totalStr = String(netHpChange); // 例: -12
+      totalClass = 'total';
+    } else if (netHpChange > 0) {
+      totalStr = '+' + netHpChange;   // 例: +8
+      totalClass = 'heal';
+    } else {
+      totalStr = '±0';
+      totalClass = 'base';
+    }
+
     totalRow.innerHTML = `
-      <span class="dmg-step-icon">💥</span>
-      <span class="dmg-total-label">TOTAL</span>
-      <span class="dmg-step-val total">-${total}</span>
+      <span class="dmg-step-icon">💫</span>
+      <span class="dmg-total-label">HP変化</span>
+      <span class="dmg-step-val ${totalClass}">${totalStr}</span>
     `;
     inner.appendChild(totalRow);
     stepDelay += 150;
