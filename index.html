@@ -2610,10 +2610,11 @@ function afterDeclarationPhase() {
   const RPS_EMOJI_MAP = { guu:'✊', paa:'✋', choki:'✌️' };
   const RPS_NAME_JP   = { guu:'グー', paa:'パー', choki:'チョキ' };
 
-  // 自分の予告
-  if (battle.playerDeclaration) {
-    playerBannerEmoji.textContent = RPS_EMOJI_MAP[battle.playerDeclaration];
-    playerBannerText.textContent  = RPS_NAME_JP[battle.playerDeclaration];
+  // 自分の予告（_pendingDeclaration は confirmDeclaration で必ずセットされる）
+  const myDecl = window._pendingDeclaration; // 'guu'/'paa'/'choki' or null
+  if (myDecl) {
+    playerBannerEmoji.textContent = RPS_EMOJI_MAP[myDecl];
+    playerBannerText.textContent  = RPS_NAME_JP[myDecl];
   } else {
     playerBannerEmoji.textContent = '🤐';
     playerBannerText.textContent  = '予告なし';
