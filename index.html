@@ -425,6 +425,107 @@ body {
   color: var(--accent); letter-spacing: 2px;
 }
 
+/* ===== COMBO DISPLAY ===== */
+.combo-row {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 22px; margin-top: 2px;
+}
+.combo-badge {
+  font-family: 'Orbitron', monospace; font-weight: 900; font-size: 13px;
+  letter-spacing: 1px; padding: 2px 10px; border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255,100,0,0.2), rgba(255,200,0,0.15));
+  border: 1px solid rgba(255,150,0,0.5);
+  color: #ffd600; text-shadow: 0 0 10px rgba(255,150,0,0.8);
+  animation: comboPulse 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  white-space: nowrap;
+}
+.combo-badge.enemy-combo {
+  color: #ff8c00; border-color: rgba(255,80,0,0.5);
+  background: linear-gradient(135deg, rgba(255,80,0,0.2), rgba(255,150,0,0.15));
+}
+@keyframes comboPulse {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ===== DECLARATION OVERLAY ===== */
+#declaration-overlay {
+  position: fixed; inset: 0; z-index: 120;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(2,2,18,0.96);
+  backdrop-filter: blur(6px);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+#declaration-overlay.show { opacity: 1; pointer-events: all; }
+.decl-title {
+  font-family: 'Orbitron', monospace; font-weight: 900;
+  font-size: 18px; letter-spacing: 3px;
+  color: var(--accent3); margin-bottom: 6px;
+  text-shadow: 0 0 20px rgba(255,214,0,0.7);
+}
+.decl-subtitle {
+  font-size: 13px; color: var(--text-dim); margin-bottom: 20px; text-align: center;
+  max-width: 300px; line-height: 1.6;
+}
+.decl-bonus-info {
+  font-family: 'Orbitron', monospace; font-size: 12px;
+  color: #ff8c00; margin-bottom: 18px; text-align: center;
+  padding: 8px 16px; border-radius: 10px;
+  background: rgba(255,140,0,0.1); border: 1px solid rgba(255,140,0,0.3);
+}
+.decl-btns {
+  display: flex; gap: 12px; margin-bottom: 14px;
+}
+.decl-hand-btn {
+  width: 72px; height: 72px; font-size: 38px;
+  background: var(--surface2); border: 2px solid var(--border);
+  border-radius: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; position: relative;
+}
+.decl-hand-btn.selected {
+  border-color: var(--accent3);
+  background: rgba(255,214,0,0.12);
+  box-shadow: 0 0 20px rgba(255,214,0,0.4);
+  transform: scale(1.08);
+}
+.decl-hand-btn:active { transform: scale(0.95); }
+.decl-none-btn {
+  font-family: 'Orbitron', monospace; font-size: 11px;
+  color: var(--text-dim); background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px 20px; cursor: pointer; margin-bottom: 10px;
+  letter-spacing: 1px; transition: all 0.2s;
+}
+.decl-none-btn:hover { border-color: var(--text-dim); color: var(--text); }
+.decl-confirm {
+  font-family: 'Orbitron', monospace; font-weight: 700; font-size: 14px;
+  letter-spacing: 2px; background: linear-gradient(135deg, #ffd600, #ff8c00);
+  color: #1a0800; border: none; border-radius: 12px;
+  padding: 14px 36px; cursor: pointer;
+  box-shadow: 0 0 24px rgba(255,214,0,0.4);
+  transition: all 0.2s; display: none;
+}
+.decl-confirm.show { display: block; }
+.decl-confirm:active { transform: scale(0.96); }
+.decl-waiting {
+  font-family: 'Orbitron', monospace; font-size: 12px;
+  color: var(--text-dim); letter-spacing: 2px;
+  display: none; text-align: center;
+}
+.decl-waiting.show { display: block; }
+.decl-timer {
+  font-family: 'Orbitron', monospace; font-size: 11px;
+  color: var(--text-dim); margin-top: 8px; letter-spacing: 1px;
+}
+.decl-selected-label {
+  font-family: 'Orbitron', monospace; font-size: 12px;
+  color: var(--accent3); min-height: 18px; margin-bottom: 8px; text-align: center;
+  letter-spacing: 1px;
+}
+
 /* Battle arena */
 .battle-arena {
   flex: 1; display: flex; flex-direction: column;
@@ -1196,6 +1297,10 @@ body {
         <div class="turn-badge" id="turn-badge">TURN 1</div>
         <div id="sound-controls" style="display:flex;gap:6px;"></div>
       </div>
+      <div class="combo-row" id="combo-row">
+        <div id="player-combo-badge" class="combo-badge" style="display:none;"></div>
+        <div id="enemy-combo-badge" class="combo-badge enemy-combo" style="display:none;"></div>
+      </div>
     </div>
 
     <!-- ARENA -->
@@ -1243,6 +1348,19 @@ body {
 
     <!-- BOTTOM: SELECT -->
     <div class="hand-select-area" id="hand-select-area">
+      <!-- 相手の予告バナー -->
+      <div id="enemy-decl-banner" style="display:none;
+        background:linear-gradient(135deg,rgba(255,0,110,0.18),rgba(255,80,0,0.12));
+        border:1.5px solid rgba(255,80,80,0.5); border-radius:10px;
+        padding:7px 14px; margin:0 0 8px;
+        display:none; align-items:center; gap:8px;
+        font-family:'Orbitron',monospace; font-size:12px; letter-spacing:1px;
+      ">
+        <span style="font-size:18px;">📣</span>
+        <span style="color:var(--text-dim); font-size:10px;">相手の予告</span>
+        <span id="enemy-decl-banner-emoji" style="font-size:22px; line-height:1;"></span>
+        <span id="enemy-decl-banner-text" style="color:#ff8c00; font-weight:700;"></span>
+      </div>
       <div class="hand-select-label">SELECT YOUR MOVE</div>
       <div class="rps-btns">
         <div class="rps-btn" id="rps-guu" onclick="selectHand('guu')">✊</div>
@@ -1357,6 +1475,25 @@ body {
     <div id="deck-manager-list" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;">
       <div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px;font-family:'Orbitron',monospace;">保存されたデッキはありません</div>
     </div>
+  </div>
+</div>
+
+<!-- DECLARATION OVERLAY -->
+<div id="declaration-overlay">
+  <div class="decl-title">📣 今ターンの予告</div>
+  <div class="decl-subtitle">出す手を相手に予告できます。<br>予告通りの手を出すと追加ダメージ！</div>
+  <div class="decl-bonus-info"><span>予告成功ボーナス: +</span><span id="decl-bonus-val">10</span><span>ダメージ</span></div>
+  <div class="decl-selected-label" id="decl-selected-label"></div>
+  <div class="decl-btns">
+    <div class="decl-hand-btn" id="decl-guu" onclick="selectDeclaration('guu')">✊</div>
+    <div class="decl-hand-btn" id="decl-paa" onclick="selectDeclaration('paa')">✋</div>
+    <div class="decl-hand-btn" id="decl-choki" onclick="selectDeclaration('choki')">✌️</div>
+  </div>
+  <button class="decl-none-btn" onclick="selectDeclaration(null)">予告しない</button>
+  <button class="decl-confirm" id="decl-confirm-btn" onclick="confirmDeclaration()" style="display:none;">DECLARE!</button>
+  <div class="decl-waiting" id="decl-waiting">
+    <span>相手の予告を待っています</span><span class="waiting-dots"></span>
+    <div class="decl-timer" id="decl-timer"></div>
   </div>
 </div>
 
@@ -2124,6 +2261,11 @@ async function startBattle() {
   battle.playerPeekReselect = false; battle.enemyPeekReselect = false;
   battle.lastUsedPlayerCards = []; battle.lastUsedEnemyCards = [];
   battle.playerHand = []; battle.enemyHand = [];
+  // Combo & Declaration
+  battle.playerCombo = 0; battle.enemyCombo = 0;
+  battle.playerLastHand = null; battle.enemyLastHand = null;
+  battle.playerDeclaration = null; battle.enemyDeclaration = null;
+  battle.playerDeclBonus = 0; battle.enemyDeclBonus = 0;
 
   // ── デッキシャッフルを同期 ──
   // 各自が自分のシャッフル済みデッキをFirebaseに書き込み、相手のシャッフル済みデッキを受け取る
@@ -2232,6 +2374,11 @@ function startSoloBattle() {
   battle.playerHand = []; battle.enemyHand = [];
   battle.playerDeckRemain = shuffle([...playerDeck]);
   battle.enemyDeckRemain = shuffle([...aiDeck]);
+  // Combo & Declaration
+  battle.playerCombo = 0; battle.enemyCombo = 0;
+  battle.playerLastHand = null; battle.enemyLastHand = null;
+  battle.playerDeclaration = null; battle.enemyDeclaration = null;
+  battle.playerDeclBonus = 0; battle.enemyDeclBonus = 0;
 
   showScreen('battle');
   clearBattleLog();
@@ -2323,9 +2470,186 @@ function startTurn() {
   // 手札枚数表示を更新
   updateHandCountDisplay();
 
+  // ── 予告フェーズを開始 ──
+  startDeclarationPhase();
+}
+
+// ============================================================
+// COMBO SYSTEM
+// ============================================================
+function updateComboDisplay() {
+  const pBadge = document.getElementById('player-combo-badge');
+  const eBadge = document.getElementById('enemy-combo-badge');
+  const pc = battle.playerCombo || 0;
+  const ec = battle.enemyCombo || 0;
+  if (pc >= 2) {
+    pBadge.style.display = '';
+    pBadge.textContent = `🔥COMBO×${pc}(+${pc * 2})`;
+    pBadge.className = 'combo-badge';
+    void pBadge.offsetWidth; // reflow for re-animation
+    pBadge.className = 'combo-badge';
+  } else {
+    pBadge.style.display = 'none';
+  }
+  if (ec >= 2) {
+    eBadge.style.display = '';
+    eBadge.textContent = `🔥COMBO×${ec}(+${ec * 2})`;
+    eBadge.className = 'combo-badge enemy-combo';
+    void eBadge.offsetWidth;
+    eBadge.className = 'combo-badge enemy-combo';
+  } else {
+    eBadge.style.display = 'none';
+  }
+}
+
+// ============================================================
+// DECLARATION PHASE
+// ============================================================
+let _declarationResolve = null;
+
+function getDeclBonus() {
+  // ターンごとに増加: ターン1-3: 10, 4-6: 12, 7-9: 14, ...
+  return 10 + Math.floor((battle.turn - 1) / 3) * 2;
+}
+
+function startDeclarationPhase() {
+  const bonus = getDeclBonus();
+  document.getElementById('decl-bonus-val').textContent = bonus;
+  document.getElementById('decl-selected-label').textContent = '';
+  // reset buttons
+  ['guu','paa','choki'].forEach(h => {
+    document.getElementById('decl-' + h).classList.remove('selected');
+  });
+  const confirmBtn = document.getElementById('decl-confirm-btn');
+  confirmBtn.style.display = 'none';
+  confirmBtn.disabled = false;
+  document.getElementById('decl-waiting').classList.remove('show');
+
+  // Store selected declaration
+  window._pendingDeclaration = undefined; // undefined = not yet chosen
+
+  document.getElementById('declaration-overlay').classList.add('show');
+}
+
+function selectDeclaration(hand) {
+  window._pendingDeclaration = hand; // null = no declaration, 'guu'/'paa'/'choki'
+  ['guu','paa','choki'].forEach(h => {
+    const btn = document.getElementById('decl-' + h);
+    if (btn) btn.classList.toggle('selected', h === hand);
+  });
+  const label = document.getElementById('decl-selected-label');
+  const confirmBtn = document.getElementById('decl-confirm-btn');
+  if (hand !== null) {
+    const RPS_EMOJI_MAP = { guu:'✊', paa:'✋', choki:'✌️' };
+    label.textContent = `予告: ${RPS_EMOJI_MAP[hand] || hand}`;
+    confirmBtn.style.display = 'block';
+  } else {
+    // "予告しない" selected
+    label.textContent = '予告なし';
+    confirmBtn.style.display = 'block';
+  }
+}
+
+async function confirmDeclaration() {
+  if (window._pendingDeclaration === undefined) return; // nothing selected yet
+  const myDecl = window._pendingDeclaration; // null or hand string
+  battle.playerDeclaration = myDecl;
+
+  if (gameMode === 'solo') {
+    // CPUの予告（ランダム、25%の確率で予告なし）
+    const cpuHands = ['guu','paa','choki',null];
+    battle.enemyDeclaration = cpuHands[Math.floor(Math.random() * cpuHands.length)];
+    hideDeclarationOverlay();
+    afterDeclarationPhase();
+  } else {
+    // オンライン: 予告をFirebaseに書き込んで相手を待つ
+    await publishDeclaration(myDecl);
+    document.getElementById('decl-waiting').classList.add('show');
+    document.getElementById('decl-confirm-btn').disabled = true;
+    // 相手の予告を待つ
+    const enemyDecl = await waitForEnemyDeclaration();
+    battle.enemyDeclaration = enemyDecl;
+    hideDeclarationOverlay();
+    afterDeclarationPhase();
+  }
+}
+
+function hideDeclarationOverlay() {
+  document.getElementById('declaration-overlay').classList.remove('show');
+}
+
+function afterDeclarationPhase() {
+  // Now show hand select area
+  showHandSelectArea(true);
   const msg = document.getElementById('battle-status-msg');
   msg.textContent = '手とカードを選択してください';
   document.getElementById('battle-confirm-btn').style.display = 'none';
+
+  // 相手の予告を専用バナーに表示
+  const banner = document.getElementById('enemy-decl-banner');
+  const bannerEmoji = document.getElementById('enemy-decl-banner-emoji');
+  const bannerText = document.getElementById('enemy-decl-banner-text');
+  const RPS_EMOJI_MAP = { guu:'✊', paa:'✋', choki:'✌️' };
+  const RPS_NAME_JP   = { guu:'グー', paa:'パー', choki:'チョキ' };
+
+  if (battle.enemyDeclaration) {
+    bannerEmoji.textContent = RPS_EMOJI_MAP[battle.enemyDeclaration];
+    bannerText.textContent  = RPS_NAME_JP[battle.enemyDeclaration];
+    banner.style.display = 'flex';
+  } else if (battle.enemyDeclaration === null) {
+    bannerEmoji.textContent = '🤐';
+    bannerText.textContent  = '予告なし';
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+  setArenaStatus('');
+}
+
+// Firebase declaration sync
+async function publishDeclaration(hand) {
+  if (!roomId || !window._FB) return;
+  const { db, ref, set } = window._FB;
+  const myKey = myRole;
+  await set(ref(db, `rooms/${roomId}/turns/${battle.turn}/declaration/${myKey}`), {
+    hand: hand === null ? '__none__' : hand,
+    ts: Date.now()
+  });
+}
+
+async function waitForEnemyDeclaration() {
+  if (!roomId || !window._FB) return null;
+  const { db, ref, onValue, off } = window._FB;
+  const enemyKey = myRole === 'host' ? 'guest' : 'host';
+  const path = `rooms/${roomId}/turns/${battle.turn}/declaration/${enemyKey}`;
+  return new Promise(resolve => {
+    let resolved = false;
+    let tid = null;
+    let remaining = 30;
+    const timerEl = document.getElementById('decl-timer');
+    const countdown = setInterval(() => {
+      remaining--;
+      if (timerEl) timerEl.textContent = `タイムアウトまで ${remaining}秒`;
+      if (remaining <= 0) clearInterval(countdown);
+    }, 1000);
+
+    const unsub = onValue(ref(db, path), snap => {
+      if (resolved || !snap.exists()) return;
+      resolved = true;
+      clearInterval(countdown);
+      clearTimeout(tid);
+      try { unsub(); } catch(e) {}
+      const v = snap.val();
+      resolve(v.hand === '__none__' ? null : v.hand);
+    });
+    tid = setTimeout(() => {
+      if (resolved) return;
+      resolved = true;
+      clearInterval(countdown);
+      try { unsub(); } catch(e) {}
+      resolve(null);
+    }, 30000);
+  });
 }
 
 // 自分の手札状態をFirebaseに書き込む（相手がenemyHandを追跡するため）
@@ -2556,6 +2880,9 @@ function confirmAction() {
   showHandSelectArea(false);
   setArenaStatus('');
   document.getElementById('battle-status-msg').textContent = '';
+  // 予告バナーを非表示
+  const banner = document.getElementById('enemy-decl-banner');
+  if (banner) banner.style.display = 'none';
 
   if (gameMode === 'solo') {
     // CPUのアクションをすぐに決定
@@ -3349,6 +3676,36 @@ function resolveHandBattle() {
     if (playerForcedLose && !enemyForcedLose) effectiveResult = 'enemy';
     else if (enemyForcedLose && !playerForcedLose) effectiveResult = 'player';
 
+    // ── コンボカウント更新 ──
+    const actualPH = battle.playerForced || battle.selectedHand;
+    const actualEH = battle.enemyForced || battle.enemySelectedHand;
+    if (actualPH === battle.playerLastHand && actualPH !== null) {
+      battle.playerCombo = (battle.playerCombo || 0) + 1;
+    } else {
+      battle.playerCombo = 1;
+    }
+    if (actualEH === battle.enemyLastHand && actualEH !== null) {
+      battle.enemyCombo = (battle.enemyCombo || 0) + 1;
+    } else {
+      battle.enemyCombo = 1;
+    }
+    battle.playerLastHand = actualPH;
+    battle.enemyLastHand  = actualEH;
+
+    // ── 予告ボーナス計算 ──
+    const declBonus = getDeclBonus();
+    if (battle.playerDeclaration && battle.playerDeclaration === actualPH) {
+      battle.playerDeclBonus = declBonus;
+      spawnEffectToast('📣 予告成功！', '#ffd600', true);
+    } else {
+      battle.playerDeclBonus = 0;
+    }
+    if (battle.enemyDeclaration && battle.enemyDeclaration === actualEH) {
+      battle.enemyDeclBonus = declBonus;
+    } else {
+      battle.enemyDeclBonus = 0;
+    }
+
     // ── ダメージ計算（ステップを記録しつつ） ──
     let playerTookDmg = 0, enemyTookDmg = 0;
     // breakdown: { target:'player'|'enemy', icon, label, delta, type }
@@ -3420,6 +3777,12 @@ function resolveHandBattle() {
         breakdown.push({ target:'enemy', icon:'🛡️', label:'シールド発動', delta:0, type:'minus' });
         enemyTookDmg = 0;
       }
+      // ── コンボボーナス（プレイヤー勝利） ──
+      const pComboDmg = (battle.playerCombo >= 2) ? battle.playerCombo * 2 : 0;
+      if (pComboDmg > 0 && !battle.enemyShield) {
+        enemyTookDmg += pComboDmg;
+        breakdown.push({ target:'enemy', icon:'🔥', label:`コンボ×${battle.playerCombo} ボーナス`, delta:-pComboDmg, type:'plus' });
+      }
 
     } else {
       // プレイヤーがダメージを受ける
@@ -3448,12 +3811,31 @@ function resolveHandBattle() {
         breakdown.push({ target:'player', icon:'🛡️', label:'シールド発動', delta:0, type:'minus' });
         playerTookDmg = 0;
       }
+      // ── コンボボーナス（エネミー勝利） ──
+      const eComboDmg = (battle.enemyCombo >= 2) ? battle.enemyCombo * 2 : 0;
+      if (eComboDmg > 0 && !battle.playerShield) {
+        playerTookDmg += eComboDmg;
+        breakdown.push({ target:'player', icon:'🔥', label:`コンボ×${battle.enemyCombo} ボーナス`, delta:-eComboDmg, type:'plus' });
+      }
     }
 
     // HP適用（まず基本ダメ）
     battle.playerHP = Math.max(0, battle.playerHP - playerTookDmg);
     battle.enemyHP  = Math.max(0, battle.enemyHP  - enemyTookDmg);
     updateHPDisplay();
+
+    // ── 予告ボーナス（勝敗に関係なく、予告通りの手を出したら発動） ──
+    if (battle.playerDeclBonus > 0) {
+      battle.enemyHP = Math.max(0, battle.enemyHP - battle.playerDeclBonus);
+      breakdown.push({ target:'enemy', icon:'📣', label:'予告成功ボーナス', delta:-battle.playerDeclBonus, type:'plus' });
+      spawnEffectToast('📣 予告成功！', '#ffd600', true);
+      updateHPDisplay();
+    }
+    if (battle.enemyDeclBonus > 0) {
+      battle.playerHP = Math.max(0, battle.playerHP - battle.enemyDeclBonus);
+      breakdown.push({ target:'player', icon:'📣', label:'予告成功ボーナス', delta:-battle.enemyDeclBonus, type:'plus' });
+      updateHPDisplay();
+    }
 
     // ── 発動したカードを手札から除去 ──
     const usedHandIndices = battle.selectedCards.map(k => parseInt(k.split('_')[1])).sort((a,b)=>b-a);
@@ -3748,28 +4130,46 @@ function showRoundResult(result, ph, eh, pdmg, edmg) {
 
   const RPS_NAME_JP = { guu:'グー✊', paa:'パー✋', choki:'チョキ✌️' };
 
+  // Build combo/decl sub info
+  let extraInfo = '';
+  if (result === 'player' && battle.playerCombo >= 2) {
+    extraInfo += ` | 🔥コンボ×${battle.playerCombo}(+${battle.playerCombo * 2})`;
+  }
+  if (result === 'enemy' && battle.enemyCombo >= 2) {
+    extraInfo += ` | 🔥相手コンボ×${battle.enemyCombo}(+${battle.enemyCombo * 2})`;
+  }
+  // 予告ボーナスは勝敗に関係なく表示
+  if (battle.playerDeclBonus > 0) {
+    extraInfo += ` | 📣予告成功(+${battle.playerDeclBonus})`;
+  }
+  if (battle.enemyDeclBonus > 0) {
+    extraInfo += ` | 📣相手予告成功(+${battle.enemyDeclBonus})`;
+  }
+
   if (result === 'draw') {
     Audio.sfx('draw');
     mainEl.style.color = '#00f5ff'; mainEl.textContent = 'DRAW!';
     dmgEl.style.color = '#aaa';    dmgEl.textContent = `両者 -${pdmg}`;
     addLog('result-draw', `🤝 DRAW! ${RPS_NAME_JP[ph]} vs ${RPS_NAME_JP[eh]}`,
-      pdmg > 0 ? `両者 -${pdmg} HP` : 'ダメージなし');
+      (pdmg > 0 ? `両者 -${pdmg} HP` : 'ダメージなし') + extraInfo);
   } else if (result === 'player') {
     Audio.sfx('win');
     mainEl.style.color = '#ffd600'; mainEl.textContent = 'WIN!';
     dmgEl.style.color = '#ff006e'; dmgEl.textContent = `${enemyName} -${edmg}`;
     addLog('result-win', `🏆 WIN! ${RPS_NAME_JP[ph]} > ${RPS_NAME_JP[eh]}`,
-      edmg > 0 ? `${enemyName} -${edmg} HP → 残HP: ${battle.enemyHP}` : 'ダメージなし');
+      edmg > 0 ? `${enemyName} -${edmg} HP → 残HP: ${battle.enemyHP}${extraInfo}` : 'ダメージなし');
   } else {
     Audio.sfx('lose');
     mainEl.style.color = '#ff006e'; mainEl.textContent = 'LOSE...';
     dmgEl.style.color = '#ff006e'; dmgEl.textContent = `${playerName} -${pdmg}`;
     addLog('result-lose', `💀 LOSE... ${RPS_NAME_JP[ph]} vs ${RPS_NAME_JP[eh]}`,
-      pdmg > 0 ? `${playerName} -${pdmg} HP → 残HP: ${battle.playerHP}` : 'ダメージなし');
+      pdmg > 0 ? `${playerName} -${pdmg} HP → 残HP: ${battle.playerHP}${extraInfo}` : 'ダメージなし');
   }
 
   void popup.offsetWidth;
   popup.classList.add('show');
+  // Update combo display with new counts
+  updateComboDisplay();
 }
 
 function endBattle() {
