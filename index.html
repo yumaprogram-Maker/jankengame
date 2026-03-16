@@ -1204,6 +1204,195 @@ body {
   letter-spacing: 2px;
 }
 .hsm-confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ===== TUTORIAL SCREEN ===== */
+#screen-tutorial {
+  overflow-y: auto;
+  justify-content: flex-start;
+  padding-top: 0;
+  padding-bottom: 0;
+  gap: 0;
+  background: linear-gradient(180deg, #05050f 0%, #0a0a20 100%);
+}
+.tutorial-header {
+  width: 100%; max-width: 480px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: sticky; top: 0;
+  background: rgba(5,5,15,0.97);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+.tutorial-title-bar {
+  font-family: 'Orbitron', monospace;
+  font-size: 14px; color: var(--accent);
+  letter-spacing: 2px; font-weight: 700;
+}
+.tutorial-page-indicator {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px; color: var(--text-dim);
+  letter-spacing: 1px;
+}
+.tutorial-content {
+  width: 100%; max-width: 480px;
+  flex: 1; display: flex; flex-direction: column;
+  padding: 20px 16px 0;
+  animation: tutorialFadeIn 0.35s ease;
+}
+@keyframes tutorialFadeIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.tutorial-page-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 18px; font-weight: 900;
+  color: var(--accent3); letter-spacing: 2px;
+  margin-bottom: 6px; text-align: center;
+}
+.tutorial-page-emoji {
+  font-size: 52px; text-align: center;
+  margin-bottom: 14px; line-height: 1;
+  filter: drop-shadow(0 0 16px rgba(255,255,255,0.2));
+}
+.tutorial-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.tutorial-section-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px; letter-spacing: 2px;
+  color: var(--accent); margin-bottom: 8px;
+  font-weight: 700;
+}
+.tutorial-text {
+  font-size: 13px; line-height: 1.75;
+  color: var(--text);
+}
+.tutorial-text b {
+  color: var(--accent3); font-weight: 700;
+}
+.tutorial-text .hl-cyan { color: var(--accent); font-weight: 700; }
+.tutorial-text .hl-pink { color: var(--accent2); font-weight: 700; }
+.tutorial-text .hl-green { color: #00ff88; font-weight: 700; }
+.tutorial-table {
+  width: 100%; border-collapse: collapse; margin-top: 6px;
+}
+.tutorial-table th {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; letter-spacing: 1px;
+  color: var(--accent); background: var(--surface2);
+  padding: 6px 8px; border: 1px solid var(--border);
+  text-align: center;
+}
+.tutorial-table td {
+  font-size: 12px; color: var(--text);
+  padding: 7px 8px; border: 1px solid var(--border);
+  text-align: center; line-height: 1.4;
+}
+.tutorial-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+.tutorial-rank-badge {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 4px; font-family: 'Orbitron', monospace;
+  font-size: 11px; font-weight: 900;
+}
+.tutorial-rank-s { background: rgba(255,0,110,0.2); color: var(--s-color); border: 1px solid var(--s-color); }
+.tutorial-rank-a { background: rgba(255,140,0,0.2); color: var(--a-color); border: 1px solid var(--a-color); }
+.tutorial-rank-b { background: rgba(0,180,255,0.2); color: var(--b-color); border: 1px solid var(--b-color); }
+.tutorial-step-list {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.tutorial-step {
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.tutorial-step-num {
+  flex-shrink: 0; width: 24px; height: 24px;
+  background: linear-gradient(135deg, var(--accent), #0062ff);
+  border-radius: 50%; font-family: 'Orbitron', monospace;
+  font-size: 12px; font-weight: 900; color: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+}
+.tutorial-step-text {
+  font-size: 13px; color: var(--text); line-height: 1.6; padding-top: 2px;
+}
+.tutorial-step-text b { color: var(--accent3); }
+.tutorial-dot-nav {
+  display: flex; gap: 6px; justify-content: center;
+  padding: 16px 0 10px;
+}
+.tutorial-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border); transition: all 0.2s; cursor: pointer;
+}
+.tutorial-dot.active {
+  background: var(--accent); box-shadow: 0 0 8px var(--accent);
+  width: 20px; border-radius: 4px;
+}
+.tutorial-nav-area {
+  display: flex; gap: 10px; padding: 12px 16px 24px;
+  width: 100%; max-width: 480px; flex-shrink: 0;
+  position: sticky; bottom: 0;
+  background: linear-gradient(0deg, var(--bg) 60%, transparent);
+}
+.tutorial-nav-btn {
+  flex: 1; padding: 14px; border: none; cursor: pointer;
+  font-family: 'Orbitron', monospace; font-weight: 700;
+  font-size: 13px; letter-spacing: 2px; border-radius: 12px;
+  transition: all 0.2s;
+}
+.tutorial-nav-btn:active { transform: scale(0.97); }
+.tutorial-btn-prev {
+  background: var(--surface2); color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.tutorial-btn-prev:hover { color: var(--text); border-color: var(--text-dim); }
+.tutorial-btn-next {
+  background: linear-gradient(135deg, #00c896, #007755);
+  color: white;
+  box-shadow: 0 0 24px rgba(0,200,150,0.35);
+}
+.tutorial-btn-next:hover { box-shadow: 0 0 40px rgba(0,200,150,0.55); }
+.tutorial-btn-finish {
+  background: linear-gradient(135deg, #ffd600, #ff8c00);
+  color: #1a0800; flex: 2;
+  box-shadow: 0 0 24px rgba(255,214,0,0.4);
+}
+.tutorial-highlight-box {
+  background: linear-gradient(135deg, rgba(0,245,255,0.07), rgba(0,100,200,0.07));
+  border: 1px solid rgba(0,245,255,0.25);
+  border-radius: 10px; padding: 10px 14px;
+  margin-top: 8px;
+}
+.tutorial-rps-demo {
+  display: flex; gap: 14px; justify-content: center; margin: 10px 0;
+}
+.tutorial-rps-cell {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 14px;
+}
+.tutorial-rps-cell .rps-em { font-size: 34px; }
+.tutorial-rps-cell .rps-lb {
+  font-family: 'Orbitron', monospace; font-size: 9px;
+  color: var(--text-dim); letter-spacing: 1px;
+}
+.tutorial-win-table {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px; margin-top: 8px;
+}
+.tutorial-win-cell {
+  background: var(--surface2); border-radius: 8px;
+  padding: 7px 4px; text-align: center;
+  font-size: 12px; border: 1px solid var(--border);
+}
+.tutorial-win-cell .wc-em { font-size: 16px; display: block; }
+.tutorial-win-cell .wc-arrow { color: var(--accent3); font-size: 11px; }
+.tutorial-win-cell .wc-em2 { font-size: 16px; display: block; }
 </style>
 </head>
 <body>
@@ -1220,7 +1409,22 @@ body {
   <div style="display:flex;flex-direction:column;gap:14px;width:100%;max-width:300px;align-items:center;">
     <button class="btn btn-gold" onclick="Audio.bgm('title'); startFromTitle('online')" style="font-size:16px;">🌐 通信対戦</button>
     <button class="btn btn-primary" onclick="Audio.bgm('title'); startFromTitle('solo')" style="background:linear-gradient(135deg,#a020f0,#5500cc);box-shadow:0 0 30px rgba(160,32,240,0.4);">🤖 ソロプレイ</button>
+    <button class="btn btn-primary" onclick="Audio.sfx('click'); showTutorial()" style="background:linear-gradient(135deg,#00c896,#007755);box-shadow:0 0 30px rgba(0,200,150,0.4);font-size:14px;">📖 チュートリアル</button>
   </div>
+</div>
+
+<!-- TUTORIAL -->
+<div id="screen-tutorial" class="screen hidden">
+  <div class="tutorial-header" style="width:100%;max-width:480px;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0;background:rgba(5,5,15,0.97);">
+    <div class="tutorial-title-bar">📖 TUTORIAL</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="tutorial-page-indicator" id="tut-page-indicator">1 / 7</div>
+      <button onclick="showScreen('title')" style="background:rgba(0,0,0,0.5);border:1px solid var(--border);color:var(--text-dim);border-radius:8px;padding:4px 12px;font-family:'Orbitron',monospace;font-size:11px;cursor:pointer;letter-spacing:1px;">✕</button>
+    </div>
+  </div>
+  <div id="tut-content" class="tutorial-content"></div>
+  <div class="tutorial-dot-nav" id="tut-dot-nav" style="padding:12px 0 6px;width:100%;max-width:480px;display:flex;gap:6px;justify-content:center;flex-shrink:0;"></div>
+  <div class="tutorial-nav-area" id="tut-nav-area" style="width:100%;max-width:480px;"></div>
 </div>
 
 <!-- NAME -->
@@ -1552,13 +1756,13 @@ body {
 const CARD_DB = [
   // === S RANK (cost 20) ===
   { id:'s1', rank:'S', name:'フェニックスオーラ', icon:'🔥', cost:20,
-    desc:'HP30回復 + ダメージ+5', detail:'炎の翼が包み込み、傷を癒しつつ闘志を燃やす。HP30回復＆このターンの与ダメ+5。', effect:{heal:30, dmgUp:5} },
+    desc:'HP30回復 + ダメージ+5', detail:'炎の翼が包み込み、傷を癒しつつ闘志を燃やす。HP30回復＆勝利時の与ダメ+5。', effect:{heal:30, dmgUp:5} },
   { id:'s2', rank:'S', name:'鉄壁の盾', icon:'🛡️', cost:20,
     desc:'次の被ダメを0にする', detail:'完全無敵の盾を展開。このターン、相手からのダメージを完全に0にする鉄壁の守り。', effect:{shield:999} },
   { id:'s3', rank:'S', name:'運命操作1', icon:'✊', cost:20,
     desc:'相手の手を「グー」に強制', detail:'相手の意思を歪め、グーしか出せなくする。相手の手を強制的に「グー✊」に変える。', effect:{forceEnemy:'guu'} },
   { id:'s4', rank:'S', name:'クリティカルブースト', icon:'⚡', cost:20,
-    desc:'ダメージ+20', detail:'全力を解放した一撃。このターンの与えるダメージを+20する最大火力カード。', effect:{dmgUp:20} },
+    desc:'ダメージ+20', detail:'全力を解放した一撃。勝利時のダメージを+20する最大火力カード。', effect:{dmgUp:20} },
   { id:'s5', rank:'S', name:'運命操作2', icon:'✋', cost:20,
     desc:'相手の手を「パー」に強制', detail:'相手の手首を掌握し、パーしか出せなくする。相手の手を強制的に「パー✋」に変える。', effect:{forceEnemy:'paa'} },
   { id:'s6', rank:'S', name:'運命操作3', icon:'✌️', cost:20,
@@ -1568,7 +1772,7 @@ const CARD_DB = [
   { id:'s8', rank:'S', name:'完全回復', icon:'✨', cost:20,
     desc:'HPを50回復', detail:'奇跡の光に包まれる。HPを50回復する最強の回復カード。瀕死からの逆転も可能。', effect:{heal:50} },
   { id:'s9', rank:'S', name:'ヴォルケイノブレイク', icon:'🌋', cost:20,
-    desc:'ダメージ+15 + 被ダメ-5', detail:'火山の爆発力で攻防を制す。与ダメ+15と被ダメ-5を同時に発動する攻守一体の必殺カード。', effect:{dmgUp:15, dmgReduce:5} },
+    desc:'ダメージ+15 + 被ダメ-5', detail:'火山の爆発力で攻防を制す。勝利時の与ダメ+15と被ダメ-5を同時に発動する攻守一体の必殺カード。', effect:{dmgUp:15, dmgReduce:5} },
   { id:'s10', rank:'S', name:'タイムリープ', icon:'⏳', cost:20,
     desc:'HP20回復 + 被ダメ0', detail:'時を巻き戻し、あらゆる攻撃を無効化。HP20回復と完全シールドの両方を得る超レアカード。', effect:{heal:20, shield:999} },
 
@@ -1578,21 +1782,21 @@ const CARD_DB = [
   { id:'a2', rank:'A', name:'バリアフィールド', icon:'🔷', cost:10,
     desc:'被ダメージ-8', detail:'青い障壁を展開し攻撃を弾く。このターンの被ダメージを8軽減する防御カード。', effect:{dmgReduce:8} },
   { id:'a3', rank:'A', name:'パワーアップ', icon:'💪', cost:10,
-    desc:'ダメージ+10', detail:'筋肉が爆発的に膨張する。このターンの与えるダメージを10増加させる攻撃強化カード。', effect:{dmgUp:10} },
+    desc:'ダメージ+10', detail:'筋肉が爆発的に膨張する。勝利時の与えるダメージを10増加させる攻撃強化カード。', effect:{dmgUp:10} },
   { id:'a4', rank:'A', name:'ドレイン', icon:'🌑', cost:10,
     desc:'相手HP-5、自HP+5', detail:'影の蔦が相手の活力を吸い取る。相手のHPを5奪い自分のHPに加算する吸収カード。', effect:{drain:5} },
   { id:'a5', rank:'A', name:'サンダーランス', icon:'🗲', cost:10,
-    desc:'ダメージ+12', detail:'雷の槍で相手を貫く。このターンの与えるダメージを12増加させる雷撃カード。', effect:{dmgUp:12} },
+    desc:'ダメージ+12', detail:'雷の槍で相手を貫く。勝利時の与えるダメージを12増加させる雷撃カード。', effect:{dmgUp:12} },
   { id:'a6', rank:'A', name:'アイスシールド', icon:'🧊', cost:10,
     desc:'被ダメージ-10', detail:'氷の鎧が全身を覆う。このターンの被ダメージを10軽減する強力防御カード。', effect:{dmgReduce:10} },
   { id:'a7', rank:'A', name:'リジェネレーション', icon:'🌿', cost:10,
     desc:'HP15回復 + 被ダメ-3', detail:'自然の力で再生する。HP15回復と被ダメ-3の両効果を持つバランス型回復カード。', effect:{heal:15, dmgReduce:3} },
   { id:'a8', rank:'A', name:'フレイムブースト', icon:'🔴', cost:10,
-    desc:'ダメージ+8 + HP5回復', detail:'炎のエネルギーを攻撃に乗せる。与ダメ+8と同時にHP5回復も得られる複合カード。', effect:{dmgUp:8, heal:5} },
+    desc:'ダメージ+8 + HP5回復', detail:'炎のエネルギーを攻撃に乗せる。勝利時の与ダメ+8と同時にHP5回復も得られる複合カード。', effect:{dmgUp:8, heal:5} },
   { id:'a9', rank:'A', name:'ソウルドレイン', icon:'👻', cost:10,
     desc:'相手HP-8、自HP+8', detail:'幽霊の手が相手の魂を掴む。相手のHPを8吸収して自分のHPに加算する強力な吸収技。', effect:{drain:8} },
   { id:'a10', rank:'A', name:'サクリファイス', icon:'💔', cost:10,
-    desc:'自HP-5、ダメージ+18', detail:'己の血を代償に力を爆発させる。自分のHPを5犠牲にし与ダメを18増加させるリスク型大火力カード。', effect:{selfDmg:5, dmgUp:18} },
+    desc:'自HP-5、ダメージ+18', detail:'己の血を代償に力を爆発させる。自分のHPを5犠牲にし勝利時の与ダメを18増加させるリスク型大火力カード。', effect:{selfDmg:5, dmgUp:18} },
   { id:'a11', rank:'A', name:'マジックアーマー', icon:'🔮', cost:10,
     desc:'被ダメージ-6 + HP8回復', detail:'魔力の鎧が攻撃を吸収し活力に変える。被ダメ-6とHP8回復の守りに特化した複合カード。', effect:{dmgReduce:6, heal:8} },
   { id:'a12', rank:'A', name:'連撃モード', icon:'⚔️', cost:10,
@@ -1604,31 +1808,31 @@ const CARD_DB = [
   { id:'b2', rank:'B', name:'ガード', icon:'🤚', cost:5,
     desc:'被ダメージ-4', detail:'腕を構えて防御する。このターンの被ダメージを4軽減する基本防御カード。', effect:{dmgReduce:4} },
   { id:'b3', rank:'B', name:'鋭刃', icon:'🗡️', cost:5,
-    desc:'ダメージ+5', detail:'刃を研ぎ澄ます。このターンの与えるダメージを5増加させる基本攻撃カード。', effect:{dmgUp:5} },
+    desc:'ダメージ+5', detail:'刃を研ぎ澄ます。勝利時の与えるダメージを5増加させる基本攻撃カード。', effect:{dmgUp:5} },
   { id:'b4', rank:'B', name:'プチヒール', icon:'💊', cost:5,
     desc:'HP5回復', detail:'小さな回復薬。HPを5回復する軽量カード。デッキのコスト調整に便利。', effect:{heal:5} },
   { id:'b5', rank:'B', name:'マインドシフト', icon:'🌀', cost:5,
     desc:'被ダメージ-3 + HP3回復', detail:'精神を集中させ攻撃を受け流す。被ダメ-3とHP3回復の複合効果を持つコスパ良好カード。', effect:{dmgReduce:3, heal:3} },
   { id:'b6', rank:'B', name:'オーラ纏い', icon:'🌟', cost:5,
-    desc:'ダメージ+4 + 被ダメ-2', detail:'オーラを纏い攻守を高める。与ダメ+4と被ダメ-2の軽量複合カード。序盤から使いやすい。', effect:{dmgUp:4, dmgReduce:2} },
+    desc:'ダメージ+4 + 被ダメ-2', detail:'オーラを纏い攻守を高める。勝利時の与ダメ+4と被ダメ-2の軽量複合カード。序盤から使いやすい。', effect:{dmgUp:4, dmgReduce:2} },
   { id:'b7', rank:'B', name:'血の意志', icon:'🩸', cost:5,
-    desc:'自HP-3、ダメージ+9', detail:'己の血で力を引き出す。HP3を犠牲にし与ダメ+9を得るリスクリターン型カード。', effect:{selfDmg:3, dmgUp:9} },
+    desc:'自HP-3、ダメージ+9', detail:'己の血で力を引き出す。HP3を犠牲にし勝利時の与ダメ+9を得るリスクリターン型カード。', effect:{selfDmg:3, dmgUp:9} },
   { id:'b8', rank:'B', name:'鉄壁ブレス', icon:'🫁', cost:5,
     desc:'被ダメージ-6', detail:'肺から鉄の息吹を放ち防壁を作る。このターンの被ダメージを6軽減する防御特化カード。', effect:{dmgReduce:6} },
   { id:'b9', rank:'B', name:'怒り爆発', icon:'😡', cost:5,
-    desc:'ダメージ+7', detail:'怒りのままに力が溢れ出す。このターンの与ダメを7増加。低コストながら高火力。', effect:{dmgUp:7} },
+    desc:'ダメージ+7', detail:'怒りのままに力が溢れ出す。勝利時の与ダメを7増加。低コストながら高火力。', effect:{dmgUp:7} },
   { id:'b10', rank:'B', name:'ミニドレイン', icon:'🦇', cost:5,
     desc:'相手HP-3、自HP+3', detail:'小さな蝙蝠が相手の体力を少し吸い取る。相手のHPを3吸収して自分に加算。', effect:{drain:3} },
   { id:'b11', rank:'B', name:'回避術', icon:'💨', cost:5,
     desc:'被ダメージ-5', detail:'風のように身を翻し攻撃を躱す。このターンの被ダメを5軽減するスピード型防御カード。', effect:{dmgReduce:5} },
   { id:'b12', rank:'B', name:'スナイパーアイ', icon:'🎯', cost:5,
-    desc:'ダメージ+6', detail:'急所を狙い澄ます。このターンの与ダメを6増加させる精密攻撃カード。', effect:{dmgUp:6} },
+    desc:'ダメージ+6', detail:'急所を狙い澄ます。勝利時与ダメを6増加させる精密攻撃カード。', effect:{dmgUp:6} },
   { id:'b13', rank:'B', name:'霊薬', icon:'⚗️', cost:5,
     desc:'HP8回復', detail:'古代の霊薬でHPを8回復する。ポーションより少し強力な回復カード。', effect:{heal:8} },
   { id:'b14', rank:'B', name:'精神集中', icon:'🧘', cost:5,
-    desc:'被ダメ-2 + ダメージ+3', detail:'精神を研ぎ澄まし全てを高める。被ダメ-2と与ダメ+3の均衡型複合カード。', effect:{dmgReduce:2, dmgUp:3} },
+    desc:'被ダメ-2 + ダメージ+3', detail:'精神を研ぎ澄まし全てを高める。被ダメ-2と勝利時与ダメ+3の均衡型複合カード。', effect:{dmgReduce:2, dmgUp:3} },
   { id:'b15', rank:'B', name:'チャージショット', icon:'💥', cost:5,
-    desc:'ダメージ+5 + HP3回復', detail:'チャージしたエネルギーを放ちつつ自己回復。与ダメ+5とHP3回復の攻撃特化複合カード。', effect:{dmgUp:5, heal:3} },
+    desc:'ダメージ+5 + HP3回復', detail:'チャージしたエネルギーを放ちつつ自己回復。勝利時与ダメ+5とHP3回復の攻撃特化複合カード。', effect:{dmgUp:5, heal:3} },
   { id:'b16', rank:'B', name:'鋼の意志', icon:'🦾', cost:5,
     desc:'被ダメ-4 + HP4回復', detail:'折れない意志が肉体を強化する。被ダメ-4とHP4回復の守り重視複合カード。', effect:{dmgReduce:4, heal:4} },
   { id:'b17', rank:'B', name:'影縫い', icon:'🕷️', cost:5,
@@ -1646,11 +1850,11 @@ const CARD_DB = [
   { id:'b23', rank:'B', name:'幸運の草', icon:'🍀', cost:5,
     desc:'HP6回復 + ダメージ+2', detail:'四つ葉のクローバーが小さな幸運をもたらす。HP6回復と与ダメ+2の軽量複合カード。', effect:{heal:6, dmgUp:2} },
   { id:'b24', rank:'B', name:'反骨心', icon:'💢', cost:5,
-    desc:'被ダメ-3 + ダメージ+4', detail:'くじけない気持ちが反撃の刃となる。被ダメ-3と与ダメ+4を同時に得る均衡型カード。', effect:{dmgReduce:3, dmgUp:4} },
+    desc:'被ダメ-3 + ダメージ+4', detail:'くじけない気持ちが反撃の刃となる。被ダメ-3と勝利時与ダメ+4を同時に得る均衡型カード。', effect:{dmgReduce:3, dmgUp:4} },
 
   // === NEW S RANK (cost 20) ===
   { id:'s11', rank:'S', name:'神罰の雷', icon:'⚡', cost:20,
-    desc:'ダメージ+25 / 自HP-10', detail:'神の怒りを解き放つ両刃の剣。自分のHPを10犠牲に相手へのダメージを+25する超破壊カード。', effect:{dmgUp:25, selfDmg:10} },
+    desc:'ダメージ+25 / 自HP-10', detail:'神の怒りを解き放つ両刃の剣。自分のHPを10犠牲に勝利時の与ダメージを+25する超破壊カード。', effect:{dmgUp:25, selfDmg:10} },
   { id:'s12', rank:'S', name:'ブラックホール', icon:'🕳️', cost:20,
     desc:'相手HP-20 直接ダメ', detail:'重力の渦が相手を飲み込む。じゃんけん結果に関係なく相手に直接20ダメージを与える。', effect:{directDmgEnemy:20} },
   { id:'s13', rank:'S', name:'ネクロマンサー', icon:'💀', cost:20,
@@ -1662,9 +1866,9 @@ const CARD_DB = [
   { id:'s16', rank:'S', name:'デスマーク', icon:'☠️', cost:20,
     desc:'勝利時ダメ+30', detail:'死の刻印を刻み込む。このターン勝利した場合、与えるダメージを+30する一撃必殺カード。', effect:{dmgUp:30} },
   { id:'s17', rank:'S', name:'聖域展開', icon:'🌈', cost:20,
-    desc:'HP25回復 + 被ダメ0 + ダメ+5', detail:'聖なる結界が全てを守る。HP25回復・完全シールド・与ダメ+5の三重効果を持つ最強守護カード。', effect:{heal:25, shield:999, dmgUp:5} },
+    desc:'HP25回復 + 被ダメ0 + ダメ+5', detail:'聖なる結界が全てを守る。HP25回復・完全シールド・勝利時与ダメ+5の三重効果を持つ最強守護カード。', effect:{heal:25, shield:999, dmgUp:5} },
   { id:'s18', rank:'S', name:'スターバースト', icon:'🌠', cost:20,
-    desc:'あいこ時ダメ+20 + 通常ダメ+10', detail:'星が爆発する全方位攻撃。あいこ時に追加ダメ+20、さらに通常与ダメも+10する制圧型カード。', effect:{dmgUp:10, drawDmg:20} },
+    desc:'あいこ時ダメ+20 + 通常ダメ+10', detail:'星が爆発する全方位攻撃。あいこ時に追加ダメ+20、さらに勝利時与ダメも+10する制圧型カード。', effect:{dmgUp:10, drawDmg:20} },
   { id:'s19', rank:'S', name:'カオスフィールド', icon:'🌪️', cost:20,
     desc:'相手の手をランダムに変える', detail:'混沌が相手の意識を乱す。相手の出す手をランダムに書き換える予測不能の妨害カード。', effect:{forceEnemyRandom:true} },
   { id:'s20', rank:'S', name:'オメガドレイン', icon:'🔮', cost:20,
@@ -1674,23 +1878,23 @@ const CARD_DB = [
 
   // === NEW A RANK (cost 10) ===
   { id:'a13', rank:'A', name:'ダブルエッジ', icon:'⚔️', cost:10,
-    desc:'ダメ+14 / 自HP-4', detail:'両刃の剣で全力攻撃。自分のHP4を犠牲に与ダメ+14を得るリスクと火力のバランス型カード。', effect:{dmgUp:14, selfDmg:4} },
+    desc:'ダメ+14 / 自HP-4', detail:'両刃の剣で全力攻撃。自分のHP4を犠牲に勝利時与ダメ+14を得るリスクと火力のバランス型カード。', effect:{dmgUp:14, selfDmg:4} },
   { id:'a14', rank:'A', name:'エコーヒール', icon:'🫀', cost:10,
     desc:'HP18回復', detail:'心臓が脈打ちHPを回復。HPを18回復するAランク最高峰の回復カード。', effect:{heal:18} },
   { id:'a15', rank:'A', name:'ダークシールド', icon:'🌒', cost:10,
     desc:'被ダメ-12 + 自HP-3', detail:'闇の盾は重く脆い自分を削る。自HP3を犠牲にこのターンの被ダメを12軽減する防御特化カード。', effect:{dmgReduce:12, selfDmg:3} },
   { id:'a16', rank:'A', name:'アドレナリン', icon:'💉', cost:10,
-    desc:'ダメ+10 + 被ダメ-5', detail:'アドレナリンが全身を駆け巡る。与ダメ+10と被ダメ-5の攻防バランス型Aカード。', effect:{dmgUp:10, dmgReduce:5} },
+    desc:'ダメ+10 + 被ダメ-5', detail:'アドレナリンが全身を駆け巡る。勝利時与ダメ+10と被ダメ-5の攻防バランス型Aカード。', effect:{dmgUp:10, dmgReduce:5} },
   { id:'a17', rank:'A', name:'バンパイアキス', icon:'🧛', cost:10,
     desc:'相手HP-10、自HP+10', detail:'吸血鬼の口付けで生命力を奪う。相手のHPを10吸収して自分に加算する強力ドレインカード。', effect:{drain:10} },
   { id:'a18', rank:'A', name:'フォースフィールド', icon:'🛸', cost:10,
     desc:'被ダメ-15', detail:'異星の力場が全攻撃を弾く。このターンの被ダメを15軽減するAランク最強防御カード。', effect:{dmgReduce:15} },
   { id:'a19', rank:'A', name:'ゴーストブレイク', icon:'👾', cost:10,
-    desc:'ダメ+11 + HP7回復', detail:'霊体が攻防を同時にこなす。与ダメ+11とHP7回復を同時に得る攻撃寄り複合カード。', effect:{dmgUp:11, heal:7} },
+    desc:'ダメ+11 + HP7回復', detail:'霊体が攻防を同時にこなす。勝利時与ダメ+11とHP7回復を同時に得る攻撃寄り複合カード。', effect:{dmgUp:11, heal:7} },
   { id:'a20', rank:'A', name:'リフレクト', icon:'🔁', cost:10,
     desc:'被ダメを半分相手に返す', detail:'受けたダメージを跳ね返す。このターン被ったダメージの半分を相手にも与える反射カード。', effect:{reflect:0.5} },
   { id:'a21', rank:'A', name:'ファイナルスタンド', icon:'🔰', cost:10,
-    desc:'HPが低いほどダメ増加', detail:'追い詰められた時こそ真価を発揮。自分の残りHPが少ないほど与ダメが増加する逆転型カード（最大+20）。', effect:{lowHpBoost:true} },
+    desc:'HPが低いほどダメ増加', detail:'追い詰められた時こそ真価を発揮。自分の残りHPが少ないほど勝利時与ダメが増加する逆転型カード（最大+20）。', effect:{lowHpBoost:true} },
   { id:'a22', rank:'A', name:'トリプルドロー', icon:'🃏', cost:10,
     desc:'次のターン追加で3枚ドロー', detail:'次のターンのドロー枚数を+3増加させる。手札を一気に充実させる戦略型サポートカード。', effect:{extraDraw:3} },
 
@@ -1711,9 +1915,9 @@ const CARD_DB = [
   { id:'s26', rank:'S', name:'カードスティール', icon:'🕵️', cost:20,
     desc:'相手のドロー済みカード2枚を次ターンデッキに戻す', detail:'相手の手札に忍び込み、カード2枚を奪い去る。相手のドロー済みカード2枚を選択し、次のターン相手のデッキに戻す。', effect:{stealCards:2} },
   { id:'s27', rank:'S', name:'絶対覇道', icon:'👑', cost:20,
-    desc:'ダメージ+18 + 被ダメ-10 + HP10回復', detail:'王者の力が全てを圧倒する。与ダメ+18、被ダメ-10、HP10回復を同時発動する究極の万能カード。', effect:{dmgUp:18, dmgReduce:10, heal:10} },
+    desc:'ダメージ+18 + 被ダメ-10 + HP10回復', detail:'王者の力が全てを圧倒する。勝利時与ダメ+18、被ダメ-10、HP10回復を同時発動する究極の万能カード。', effect:{dmgUp:18, dmgReduce:10, heal:10} },
   { id:'s28', rank:'S', name:'真空斬', icon:'🌬️', cost:20,
-    desc:'ダメージ+30 + 自HP-15', detail:'真空の刃で全てを切り裂く。HP15を代償にこのターンの与ダメ+30を得る超高火力カード。HP管理必須。', effect:{dmgUp:30, selfDmg:15} },
+    desc:'ダメージ+30 + 自HP-15', detail:'真空の刃で全てを切り裂く。HP15を代償に勝利時与ダメ+30を得る超高火力カード。HP管理必須。', effect:{dmgUp:30, selfDmg:15} },
   { id:'s29', rank:'S', name:'不死の誓い', icon:'💎', cost:20,
     desc:'このターン受けたダメージを0にし HP30回復', detail:'不死の誓いが傷を完全に防ぐ。完全シールド発動かつHP30も回復する究極の生存カード。', effect:{shield:999, heal:30} },
   { id:'s30', rank:'S', name:'次元爆弾', icon:'💣', cost:20,
@@ -1735,9 +1939,9 @@ const CARD_DB = [
   { id:'a28', rank:'A', name:'影分身', icon:'👥', cost:10,
     desc:'相手HP-8 直接ダメ', detail:'影が実体を持ち相手を直接攻撃する。じゃんけん結果に関わらず相手に直接8ダメージを与える。', effect:{directDmgEnemy:8} },
   { id:'a29', rank:'A', name:'フェニックスブレス', icon:'🦅', cost:10,
-    desc:'HP12回復 + ダメージ+5', detail:'不死鳥の炎が体を癒し力をみなぎらせる。HP12回復と与ダメ+5を同時に発動するバランス型カード。', effect:{heal:12, dmgUp:5} },
+    desc:'HP12回復 + ダメージ+5', detail:'不死鳥の炎が体を癒し力をみなぎらせる。HP12回復と勝利時与ダメ+5を同時に発動するバランス型カード。', effect:{heal:12, dmgUp:5} },
   { id:'a30', rank:'A', name:'雷鳴連打', icon:'⚡', cost:10,
-    desc:'あいこ時追加ダメ+10 + ダメージ+5', detail:'連続する雷撃で相手を圧倒する。通常の与ダメ+5に加え、あいこ時にも追加で10ダメージを与える攻撃カード。', effect:{dmgUp:5, drawDmg:10} },
+    desc:'あいこ時追加ダメ+10 + ダメージ+5', detail:'連続する雷撃で相手を圧倒する。勝利時与ダメ+5に加え、あいこ時にも追加で10ダメージを与える攻撃カード。', effect:{dmgUp:5, drawDmg:10} },
 ];
 
 // ============================================================
@@ -1781,7 +1985,7 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById('screen-' + id).classList.remove('hidden');
   // BGM per screen
-  if (id === 'title' || id === 'deck' || id === 'name') Audio.bgm('title');
+  if (id === 'title' || id === 'deck' || id === 'name' || id === 'tutorial') Audio.bgm('title');
   if (id === 'match') Audio.bgm('match');
   if (id === 'battle') { Audio.bgm('battle'); buildSoundControls(); }
 }
@@ -1814,6 +2018,355 @@ function backToTitle() {
   _battleStarted = false;
   _matchingActive = false;
   showScreen('title');
+}
+
+// ============================================================
+// TUTORIAL SYSTEM
+// ============================================================
+const TUTORIAL_PAGES = [
+  {
+    title: 'ゲームの概要',
+    emoji: '🎮',
+    html: `
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">🎯 JANKEN CLASH とは？</div>
+        <div class="tutorial-text">
+          <b>じゃんけん</b>をベースにした<b>カードバトルゲーム</b>です。<br>
+          相手に先にHPを0にされたら負け。毎ターン<b>グー・チョキ・パー</b>を選び、強力なカードを組み合わせて戦います。
+        </div>
+      </div>
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">🏆 勝利条件</div>
+        <div class="tutorial-text">
+          お互いのHPは最初<b>100</b>。じゃんけんに勝つたびにダメージを与え、相手のHPを<span class="hl-pink">0以下</span>にした方が勝ちです。<br><br>
+          どちらかのHPが0になるまで何ターンでも続きます。
+        </div>
+      </div>
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">🌐 ゲームモード</div>
+        <div class="tutorial-text">
+          <b>通信対戦</b> — リアルタイムでプレイヤーと対戦<br>
+          <b>ソロプレイ</b> — AIと練習対戦
+        </div>
+      </div>
+    `
+  },
+  {
+    title: 'じゃんけんのルール',
+    emoji: '✊✋✌️',
+    html: `
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">🤜 基本の勝敗</div>
+        <div class="tutorial-rps-demo">
+          <div class="tutorial-rps-cell"><span class="rps-em">✊</span><span class="rps-lb">GUU</span></div>
+          <div class="tutorial-rps-cell"><span class="rps-em">✋</span><span class="rps-lb">PAA</span></div>
+          <div class="tutorial-rps-cell"><span class="rps-em">✌️</span><span class="rps-lb">CHOKI</span></div>
+        </div>
+        <div class="tutorial-win-table">
+          <div class="tutorial-win-cell"><span class="wc-em">✊</span><span class="wc-arrow">▶ 勝ち ▶</span><span class="wc-em2">✌️</span></div>
+          <div class="tutorial-win-cell"><span class="wc-em">✌️</span><span class="wc-arrow">▶ 勝ち ▶</span><span class="wc-em2">✋</span></div>
+          <div class="tutorial-win-cell"><span class="wc-em">✋</span><span class="wc-arrow">▶ 勝ち ▶</span><span class="wc-em2">✊</span></div>
+        </div>
+      </div>
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">💥 ダメージ計算</div>
+        <div class="tutorial-text">
+          じゃんけんに<b>勝った側</b>が相手にダメージを与えます。<br><br>
+          基本ダメージは<b>10</b>です。<br>
+          カードの効果やターン経過でこの値が変化します。<br><br>
+          <span class="hl-cyan">あいこ</span>は両者に5ダメージ（この値もターン経過で増えます）。
+        </div>
+      </div>
+      <div class="tutorial-highlight-box">
+        <div class="tutorial-text" style="color:var(--accent3);font-weight:700;text-align:center;">
+          ⚡ 同じ手で連続して勝利してコンボボーナス発動！<br>
+          <span style="font-size:11px;font-weight:400;color:var(--text-dim);">同じ手を続けて出し、勝利すると追加でダメージが発生します</span>
+        </div>
+      </div>
+    `
+  },
+  {
+    title: 'デッキの組み方',
+    emoji: '🃏',
+    html: `
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">📋 デッキのルール</div>
+        <ul class="tutorial-step-list">
+          <li class="tutorial-step">
+            <div class="tutorial-step-num">1</div>
+            <div class="tutorial-step-text">デッキは必ず<b>16枚</b>ちょうどで構成する</div>
+          </li>
+          <li class="tutorial-step">
+            <div class="tutorial-step-num">2</div>
+            <div class="tutorial-step-text">合計コストが<b>200以下</b>になるよう選ぶ</div>
+          </li>
+          <li class="tutorial-step">
+            <div class="tutorial-step-num">3</div>
+            <div class="tutorial-step-text">同じカードは<b>1枚まで</b>デッキに入れられる</div>
+          </li>
+          <li class="tutorial-step">
+            <div class="tutorial-step-num">4</div>
+            <div class="tutorial-step-text">迷ったら<b>🎲 RANDOM</b>ボタンで自動選択もできるよ！</div>
+          </li>
+        </ul>
+      </div>
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">⭐ カードランク</div>
+        <table class="tutorial-table">
+          <tr>
+            <th>ランク</th><th>コスト</th><th>特徴</th>
+          </tr>
+          <tr>
+            <td><span class="tutorial-rank-badge tutorial-rank-s">S</span></td>
+            <td>20</td>
+            <td style="text-align:left">超強力・1ターンを制圧する力</td>
+          </tr>
+          <tr>
+            <td><span class="tutorial-rank-badge tutorial-rank-a">A</span></td>
+            <td>10</td>
+            <td style="text-align:left">強力・攻守のバランス重視</td>
+          </tr>
+          <tr>
+            <td><span class="tutorial-rank-badge tutorial-rank-b">B</span></td>
+            <td>5</td>
+            <td style="text-align:left">軽量・小回りの効くサポート</td>
+          </tr>
+        </table>
+      </div>
+      <div class="tutorial-highlight-box">
+        <div class="tutorial-text">
+          💡 <b>デッキを保存</b>することができます。試合後の結果画面で「💾 このデッキを保存」を押すと次回以降も使用可能です。
+        </div>
+      </div>
+    `
+  },
+  {
+    title: 'バトルの流れ',
+    emoji: '⚔️',
+    html: `
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">🔄 1ターンの流れ</div>
+        <ul class="tutorial-step-list">
+          <li class="tutorial-step">
+            <div class="tutorial-step-num">1</div>
+            <div class="tutorial-step-text"><b>📣 予告フェーズ</b>（任意）<br>今ターンに出す手を相手に宣言。予告通りに出すと勝敗に関係なく<b>追加ダメージ</b>！</div>
+          </li>
+          <li class="tutorial-step">
+            <div class="tutorial-step-num">2</div>
+            <div class="tutorial-step-text"><b>✊ 手の選択</b><br>グー・チョキ・パーから1つ選ぶ</div>
+          </li>
+          <li class="tutorial-step">
+            <div class="tutorial-step-num">3</div>
+            <div class="tutorial-step-text"><b>🃏 カードを使う</b>（最大3枚）<br>手札から使いたいカードを選択（0枚でもOK）</div>
+          </li>
+          <li class="tutorial-step">
+            <div class="tutorial-step-num">4</div>
+            <div class="tutorial-step-text"><b>✅ CONFIRM</b>ボタンで確定<br>同時に結果が発表される</div>
+          </li>
+          <li class="tutorial-step">
+            <div class="tutorial-step-num">5</div>
+            <div class="tutorial-step-text"><b>ダメージ計算 → 新しいカードをドロー</b><br>次のターンへ進む</div>
+          </li>
+        </ul>
+      </div>
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">🃏 手札について</div>
+        <div class="tutorial-text">
+          手札は最大<b>10枚</b>まで保持できます。<br>
+          毎ターン開始時に<b>デッキから2枚</b>ドローします。<br>
+          使ったカードは手札から消えます。使わなかったカードは<span class="hl-cyan">持ち越し</span>！
+        </div>
+      </div>
+    `
+  },
+  {
+    title: 'カードの効果一覧',
+    emoji: '✨',
+    html: `
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">⚔️ 攻撃系カード</div>
+        <table class="tutorial-table">
+          <tr><th>効果</th><th>説明</th></tr>
+          <tr><td>ダメージ+N</td><td style="text-align:left">このターンで自分の勝利時与えるダメージをN増加</td></tr>
+          <tr><td>相手HP-N 直接ダメ</td><td style="text-align:left">じゃんけん結果に関係なく相手にNダメ</td></tr>
+          <tr><td>あいこでも+N</td><td style="text-align:left">あいこの時も追加でNダメージを与える</td></tr>
+        </table>
+      </div>
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">🛡️ 防御系カード</div>
+        <table class="tutorial-table">
+          <tr><th>効果</th><th>説明</th></tr>
+          <tr><td>被ダメージ-N</td><td style="text-align:left">このターンに受けるダメージをN軽減</td></tr>
+          <tr><td>このターン被ダメ0</td><td style="text-align:left">完全シールド。ダメージを0にする（追加ダメージは0にできない）</td></tr>
+          <tr><td>被ダメを半分返す</td><td style="text-align:left">受けたダメージの半分を反射</td></tr>
+        </table>
+      </div>
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">💚 回復・特殊系カード</div>
+        <table class="tutorial-table">
+          <tr><th>効果</th><th>説明</th></tr>
+          <tr><td>HP+N 回復</td><td style="text-align:left">自分のHPをN回復する</td></tr>
+          <tr><td>相手HP-N、自HP+N</td><td style="text-align:left">相手のHPを吸い取る（ドレイン）</td></tr>
+          <tr><td>自HP-N、ダメ+M</td><td style="text-align:left">自分のHPを犠牲に大きなダメージ</td></tr>
+          <tr><td>次ターン+N枚ドロー</td><td style="text-align:left">次のターンに追加でN枚引く</td></tr>
+        </table>
+      </div>
+    `
+  },
+  {
+    title: '予告システム',
+    emoji: '📣',
+    html: `
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">📣 予告とは？</div>
+        <div class="tutorial-text">
+          バトル開始前に、今ターンで出す手を<b>相手に宣言</b>できます。<br><br>
+          予告は<b>任意</b>です。「予告しない」を選ぶことも可能。<br><br>
+          予告した手を実際に出すと→ <span class="hl-cyan">追加ダメージボーナス</span>が発生！<br>
+          ただし相手にも宣言が見えるため、逆手に取られるリスクも…
+        </div>
+      </div>
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">🎯 予告の戦略</div>
+        <ul class="tutorial-step-list">
+          <li class="tutorial-step">
+            <div class="tutorial-step-num" style="background:linear-gradient(135deg,#ffd600,#ff8c00);">◎</div>
+            <div class="tutorial-step-text"><b>予告通りの手を出す</b> — ボーナスダメ―ジを狙う積極的戦法</div>
+          </li>
+          <li class="tutorial-step">
+            <div class="tutorial-step-num" style="background:linear-gradient(135deg,#ff006e,#cc0055);">◎</div>
+            <div class="tutorial-step-text"><b>フェイク予告</b> — わざと違う手を宣言して相手を惑わす</div>
+          </li>
+          <li class="tutorial-step">
+            <div class="tutorial-step-num" style="background:linear-gradient(135deg,#8888aa,#555577);">◎</div>
+            <div class="tutorial-step-text"><b>予告しない</b> — 読まれるリスクを避ける</div>
+          </li>
+        </ul>
+      </div>
+      <div class="tutorial-highlight-box">
+        <div class="tutorial-text">
+          ⏱️ 予告には<b>制限時間</b>があります。時間内に選択しないと自動的に「予告なし」になります。
+        </div>
+      </div>
+    `
+  },
+  {
+    title: '便利な機能・Tips',
+    emoji: '💡',
+    html: `
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">🎮 操作のコツ</div>
+        <ul class="tutorial-step-list">
+         
+          <li class="tutorial-step">
+            <div class="tutorial-step-num" style="background:linear-gradient(135deg,#ffd600,#ff8c00);">★</div>
+            <div class="tutorial-step-text">バトル中の<b>⚙️ボタン</b>でバトルログを確認できる</div>
+          </li>
+          <li class="tutorial-step">
+            <div class="tutorial-step-num" style="background:linear-gradient(135deg,#00c896,#007755);">★</div>
+            <div class="tutorial-step-text"><b>🎲 RANDOM</b>でデッキを自動生成。初心者にオススメ！</div>
+          </li>
+          <li class="tutorial-step">
+            <div class="tutorial-step-num" style="background:linear-gradient(135deg,#00c8ff,#0062ff);">★</div>
+            <div class="tutorial-step-text">1ターンでカードを最大<b>3枚同時</b>使用可能。複合効果で戦況を一変させよう</div>
+          </li>
+        </ul>
+      </div>
+      <div class="tutorial-section">
+        <div class="tutorial-section-title">🏅 デッキ作りのコツ</div>
+        <div class="tutorial-text">
+          <b>攻撃特化</b> — Sランクの高火力カードとAランクダメ増加を組み合わせ<br><br>
+          <b>防御重視</b> — シールドと回復を組み合わせて耐久勝負<br><br>
+          <b>バランス型</b> — Sが4枚、Aが12枚で安定して強い手札補充<br><br>
+          <span class="hl-cyan">ドレインカード</span>は攻守両用！相手を削りながら自分を回復できる強力なカードです。
+          <span class="hl-cyan">運命操作</span>は相手の出す手を固定できる！どうしても勝ちたいときに一緒に使おう！
+        </div>
+      </div>
+      <div class="tutorial-highlight-box">
+        <div class="tutorial-text" style="text-align:center;color:var(--accent3);font-weight:700;">
+          🎉 準備はできた！さっそく対戦してみよう！
+        </div>
+      </div>
+    `
+  }
+];
+
+let tutorialPage = 0;
+
+function showTutorial() {
+  tutorialPage = 0;
+  showScreen('tutorial');
+  renderTutorialPage();
+}
+
+function renderTutorialPage() {
+  const page = TUTORIAL_PAGES[tutorialPage];
+  const total = TUTORIAL_PAGES.length;
+  const isLast = tutorialPage === total - 1;
+
+  // ページインジケーター
+  document.getElementById('tut-page-indicator').textContent = `${tutorialPage + 1} / ${total}`;
+
+  // コンテンツ
+  const content = document.getElementById('tut-content');
+  content.innerHTML = `
+    <div class="tutorial-page-emoji">${page.emoji}</div>
+    <div class="tutorial-page-title">${page.title}</div>
+    ${page.html}
+    <div style="height:8px;"></div>
+  `;
+  // アニメーションのリトリガー
+  content.style.animation = 'none';
+  void content.offsetWidth;
+  content.style.animation = 'tutorialFadeIn 0.3s ease';
+
+  // ドットナビ
+  const dotNav = document.getElementById('tut-dot-nav');
+  dotNav.innerHTML = TUTORIAL_PAGES.map((_, i) =>
+    `<div class="tutorial-dot ${i === tutorialPage ? 'active' : ''}" onclick="goToTutorialPage(${i})"></div>`
+  ).join('');
+
+  // ナビボタン
+  const navArea = document.getElementById('tut-nav-area');
+  if (isLast) {
+    navArea.innerHTML = `
+      <button class="tutorial-nav-btn tutorial-btn-prev" onclick="prevTutorialPage()">◀ PREV</button>
+      <button class="tutorial-nav-btn tutorial-btn-finish" onclick="showScreen('title');Audio.sfx('confirm');">🎮 はじめる！</button>
+    `;
+  } else {
+    const prevHtml = tutorialPage === 0
+      ? `<button class="tutorial-nav-btn tutorial-btn-prev" onclick="showScreen('title')">✕ 閉じる</button>`
+      : `<button class="tutorial-nav-btn tutorial-btn-prev" onclick="prevTutorialPage()">◀ PREV</button>`;
+    navArea.innerHTML = `
+      ${prevHtml}
+      <button class="tutorial-nav-btn tutorial-btn-next" onclick="nextTutorialPage()">NEXT ▶</button>
+    `;
+  }
+
+  // スクロールをトップに
+  document.getElementById('screen-tutorial').scrollTop = 0;
+}
+
+function nextTutorialPage() {
+  if (tutorialPage < TUTORIAL_PAGES.length - 1) {
+    tutorialPage++;
+    Audio.sfx('click');
+    renderTutorialPage();
+  }
+}
+
+function prevTutorialPage() {
+  if (tutorialPage > 0) {
+    tutorialPage--;
+    Audio.sfx('click');
+    renderTutorialPage();
+  }
+}
+
+function goToTutorialPage(idx) {
+  tutorialPage = idx;
+  Audio.sfx('click');
+  renderTutorialPage();
 }
 
 // ============================================================
