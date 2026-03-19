@@ -1762,25 +1762,25 @@ const CARD_DB = [
   { id:'s3', rank:'S', name:'運命操作1', icon:'✊', cost:20,
     desc:'相手の手を「グー」に強制', detail:'相手の意思を歪め、グーしか出せなくする。相手の手を強制的に「グー✊」に変える。', effect:{forceEnemy:'guu'} },
   { id:'s4', rank:'S', name:'クリティカルブースト', icon:'⚡', cost:20,
-    desc:'ダメージ+20', detail:'全力を解放した一撃。勝利時のダメージを+20する最大火力カード。', effect:{dmgUp:20} },
+    desc:'ダメージ+20', detail:'全力を解放した一撃。勝利時のダメージを+20するカード。', effect:{dmgUp:20} },
   { id:'s5', rank:'S', name:'運命操作2', icon:'✋', cost:20,
     desc:'相手の手を「パー」に強制', detail:'相手の手首を掌握し、パーしか出せなくする。相手の手を強制的に「パー✋」に変える。', effect:{forceEnemy:'paa'} },
   { id:'s6', rank:'S', name:'運命操作3', icon:'✌️', cost:20,
     desc:'相手の手を「チョキ」に強制', detail:'精神に割り込み、チョキしか出せなくする。相手の手を強制的に「チョキ✌️」に変える。', effect:{forceEnemy:'choki'} },
   { id:'s7', rank:'S', name:'ライフスティール', icon:'💀', cost:20,
-    desc:'相手HP-15、自HP+15', detail:'闇の力で相手の生命力を奪い取る。相手のHPを15吸収し自分のHPに変換する。', effect:{drain:15} },
+    desc:'相手HP-10、自HP+10', detail:'闇の力で相手の生命力を奪い取る。相手のHPを10吸収し自分のHPに変換する。', effect:{drain:10} },
   { id:'s8', rank:'S', name:'完全回復', icon:'✨', cost:20,
     desc:'HPを50回復', detail:'奇跡の光に包まれる。HPを50回復する最強の回復カード。瀕死からの逆転も可能。', effect:{heal:50} },
   { id:'s9', rank:'S', name:'ヴォルケイノブレイク', icon:'🌋', cost:20,
     desc:'ダメージ+15 + 被ダメ-5', detail:'火山の爆発力で攻防を制す。勝利時の与ダメ+15と被ダメ-5を同時に発動する攻守一体の必殺カード。', effect:{dmgUp:15, dmgReduce:5} },
   { id:'s10', rank:'S', name:'タイムリープ', icon:'⏳', cost:20,
-    desc:'HP20回復 + 被ダメ0', detail:'時を巻き戻し、あらゆる攻撃を無効化。HP20回復と完全シールドの両方を得る超レアカード。', effect:{heal:20, shield:999} },
+    desc:'HP20回復 + 被ダメ0', detail:'時を巻き戻し、あらゆる攻撃を無効化。HP20回復と完全シールドの両方を得るカード。', effect:{heal:20, shield:999} },
 
   // === A RANK (cost 10) ===
   { id:'a1', rank:'A', name:'ヒールウェーブ', icon:'💚', cost:10,
     desc:'HP20回復', detail:'緑の波動が全身を包み込む。HPを20回復する安定した回復カード。', effect:{heal:20} },
   { id:'a2', rank:'A', name:'バリアフィールド', icon:'🔷', cost:10,
-    desc:'被ダメージ-8', detail:'青い障壁を展開し攻撃を弾く。このターンの被ダメージを8軽減する防御カード。', effect:{dmgReduce:8} },
+    desc:'被ダメージ-10', detail:'青い障壁を展開し攻撃を弾く。このターンの被ダメージを8軽減する防御カード。', effect:{dmgReduce:10} },
   { id:'a3', rank:'A', name:'パワーアップ', icon:'💪', cost:10,
     desc:'ダメージ+10', detail:'筋肉が爆発的に膨張する。勝利時の与えるダメージを10増加させる攻撃強化カード。', effect:{dmgUp:10} },
   { id:'a4', rank:'A', name:'ドレイン', icon:'🌑', cost:10,
@@ -1788,7 +1788,7 @@ const CARD_DB = [
   { id:'a5', rank:'A', name:'サンダーランス', icon:'🗲', cost:10,
     desc:'ダメージ+12', detail:'雷の槍で相手を貫く。勝利時の与えるダメージを12増加させる雷撃カード。', effect:{dmgUp:12} },
   { id:'a6', rank:'A', name:'アイスシールド', icon:'🧊', cost:10,
-    desc:'被ダメージ-10', detail:'氷の鎧が全身を覆う。このターンの被ダメージを10軽減する強力防御カード。', effect:{dmgReduce:10} },
+    desc:'被ダメージ-15', detail:'氷の鎧が全身を覆う。このターンの被ダメージを15軽減する強力防御カード。', effect:{dmgReduce:15} },
   { id:'a7', rank:'A', name:'リジェネレーション', icon:'🌿', cost:10,
     desc:'HP15回復 + 被ダメ-3', detail:'自然の力で再生する。HP15回復と被ダメ-3の両効果を持つバランス型回復カード。', effect:{heal:15, dmgReduce:3} },
   { id:'a8', rank:'A', name:'フレイムブースト', icon:'🔴', cost:10,
@@ -1798,9 +1798,9 @@ const CARD_DB = [
   { id:'a10', rank:'A', name:'サクリファイス', icon:'💔', cost:10,
     desc:'自HP-5、ダメージ+18', detail:'己の血を代償に力を爆発させる。自分のHPを5犠牲にし勝利時の与ダメを18増加させるリスク型大火力カード。', effect:{selfDmg:5, dmgUp:18} },
   { id:'a11', rank:'A', name:'マジックアーマー', icon:'🔮', cost:10,
-    desc:'被ダメージ-6 + HP8回復', detail:'魔力の鎧が攻撃を吸収し活力に変える。被ダメ-6とHP8回復の守りに特化した複合カード。', effect:{dmgReduce:6, heal:8} },
+    desc:'被ダメージ-6 + HP10回復', detail:'魔力の鎧が攻撃を吸収し活力に変える。被ダメ-6とHP8回復の守りに特化した複合カード。', effect:{dmgReduce:6, heal:10} },
   { id:'a12', rank:'A', name:'連撃モード', icon:'⚔️', cost:10,
-    desc:'ダメージ+7、あいこでも+5追加', detail:'連続攻撃体制に入る。勝利時の与ダメ+7。さらにあいこ時も追加ダメ+5を与える攻撃特化カード。', effect:{dmgUp:7, drawDmg:5} },
+    desc:'ダメージ+7、あいこでも+7追加', detail:'連続攻撃体制に入る。勝利時の与ダメ+7。あいこ時も追加ダメ+7を与える攻撃特化カード。', effect:{dmgUp:7, drawDmg:7} },
 
   // === B RANK (cost 5) ===
   { id:'b1', rank:'B', name:'ポーション', icon:'🧪', cost:5,
@@ -1862,9 +1862,9 @@ const CARD_DB = [
   { id:'s14', rank:'S', name:'時間停止', icon:'⏱️', cost:20,
     desc:'このターン被ダメ0 + ダメ+10', detail:'時間を止め攻守完全制圧。完全シールドに加え与ダメ+10も得る究極の攻防カード。', effect:{shield:999, dmgUp:10} },
   { id:'s15', rank:'S', name:'ミラクルリバース', icon:'🔃', cost:20,
-    desc:'HP40回復 + 被ダメ-10', detail:'奇跡が全てを覆す。HP40回復と被ダメ-10を同時に発動する逆転専用最強回復カード。', effect:{heal:40, dmgReduce:10} },
+    desc:'HP40回復 + 被ダメ-20', detail:'奇跡が全てを覆す。HP40回復と被ダメ-20を同時に発動する逆転専用最強回復カード。', effect:{heal:40, dmgReduce:20} },
   { id:'s16', rank:'S', name:'デスマーク', icon:'☠️', cost:20,
-    desc:'勝利時ダメ+30', detail:'死の刻印を刻み込む。このターン勝利した場合、与えるダメージを+30する一撃必殺カード。', effect:{dmgUp:30} },
+    desc:'勝利時ダメ+23', detail:'死の刻印を刻み込む。このターン勝利した場合、与えるダメージを+23する一撃必殺カード。', effect:{dmgUp:23} },
   { id:'s17', rank:'S', name:'聖域展開', icon:'🌈', cost:20,
     desc:'HP25回復 + 被ダメ0 + ダメ+5', detail:'聖なる結界が全てを守る。HP25回復・完全シールド・勝利時与ダメ+5の三重効果を持つ最強守護カード。', effect:{heal:25, shield:999, dmgUp:5} },
   { id:'s18', rank:'S', name:'スターバースト', icon:'🌠', cost:20,
@@ -1872,25 +1872,25 @@ const CARD_DB = [
   { id:'s19', rank:'S', name:'カオスフィールド', icon:'🌪️', cost:20,
     desc:'相手の手をランダムに変える', detail:'混沌が相手の意識を乱す。相手の出す手をランダムに書き換える予測不能の妨害カード。', effect:{forceEnemyRandom:true} },
   { id:'s20', rank:'S', name:'オメガドレイン', icon:'🔮', cost:20,
-    desc:'相手HP-20、自HP+20', detail:'究極の吸収魔法。相手のHPを20奪い自分のHPに変換する最強の吸収カード。', effect:{drain:20} },
+    desc:'相手HP-15、自HP+15', detail:'究極の吸収魔法。相手のHPを15奪い自分のHPに変換する最強の吸収カード。', effect:{drain:15} },
   { id:'s21', rank:'S', name:'エクストラドロー', icon:'🃏', cost:20,
     desc:'次のターン追加で5枚ドロー', detail:'次のターンのドロー枚数を+5増加させる。手札を一気に充実させる戦略型サポートカード。', effect:{extraDraw:5} },
 
   // === NEW A RANK (cost 10) ===
   { id:'a13', rank:'A', name:'ダブルエッジ', icon:'⚔️', cost:10,
-    desc:'ダメ+14 / 自HP-4', detail:'両刃の剣で全力攻撃。自分のHP4を犠牲に勝利時与ダメ+14を得るリスクと火力のバランス型カード。', effect:{dmgUp:14, selfDmg:4} },
+    desc:'ダメ+14 / 自HP-5', detail:'両刃の剣で全力攻撃。自分のHP5を犠牲に勝利時与ダメ+14を得るリスクと火力のバランス型カード。', effect:{dmgUp:14, selfDmg:5} },
   { id:'a14', rank:'A', name:'エコーヒール', icon:'🫀', cost:10,
     desc:'HP18回復', detail:'心臓が脈打ちHPを回復。HPを18回復するAランク最高峰の回復カード。', effect:{heal:18} },
   { id:'a15', rank:'A', name:'ダークシールド', icon:'🌒', cost:10,
-    desc:'被ダメ-12 + 自HP-3', detail:'闇の盾は重く脆い自分を削る。自HP3を犠牲にこのターンの被ダメを12軽減する防御特化カード。', effect:{dmgReduce:12, selfDmg:3} },
+    desc:'被ダメ-18 + 自HP-3', detail:'闇の盾は重く脆い自分を削る。自HP3を犠牲にこのターンの被ダメを18軽減する防御特化カード。', effect:{dmgReduce:18, selfDmg:3} },
   { id:'a16', rank:'A', name:'アドレナリン', icon:'💉', cost:10,
-    desc:'ダメ+10 + 被ダメ-5', detail:'アドレナリンが全身を駆け巡る。勝利時与ダメ+10と被ダメ-5の攻防バランス型Aカード。', effect:{dmgUp:10, dmgReduce:5} },
+    desc:'ダメ+10 + 被ダメ-10', detail:'アドレナリンが全身を駆け巡る。勝利時与ダメ+10と被ダメ-10の攻防バランス型Aカード。', effect:{dmgUp:10, dmgReduce:10} },
   { id:'a17', rank:'A', name:'バンパイアキス', icon:'🧛', cost:10,
     desc:'相手HP-10、自HP+10', detail:'吸血鬼の口付けで生命力を奪う。相手のHPを10吸収して自分に加算する強力ドレインカード。', effect:{drain:10} },
   { id:'a18', rank:'A', name:'フォースフィールド', icon:'🛸', cost:10,
-    desc:'被ダメ-15', detail:'異星の力場が全攻撃を弾く。このターンの被ダメを15軽減するAランク最強防御カード。', effect:{dmgReduce:15} },
+    desc:'被ダメ-15', detail:'異星の力場が全攻撃を弾く。このターンの被ダメを15軽減する防御カード。', effect:{dmgReduce:15} },
   { id:'a19', rank:'A', name:'ゴーストブレイク', icon:'👾', cost:10,
-    desc:'ダメ+11 + HP7回復', detail:'霊体が攻防を同時にこなす。勝利時与ダメ+11とHP7回復を同時に得る攻撃寄り複合カード。', effect:{dmgUp:11, heal:7} },
+    desc:'ダメ+10 + HP7回復', detail:'霊体が攻防を同時にこなす。勝利時与ダメ+10とHP7回復を同時に得る攻撃寄り複合カード。', effect:{dmgUp:10, heal:7} },
   { id:'a20', rank:'A', name:'リフレクト', icon:'🔁', cost:10,
     desc:'被ダメを半分相手に返す', detail:'受けたダメージを跳ね返す。このターン被ったダメージの半分を相手にも与える反射カード。', effect:{reflect:0.5} },
   { id:'a21', rank:'A', name:'ファイナルスタンド', icon:'🔰', cost:10,
@@ -1912,16 +1912,16 @@ const CARD_DB = [
     desc:'受けたダメージを2倍返し', detail:'最強の反射魔法。このターン自分が受けたダメージを2倍にして相手に返す。', effect:{counterMultiplier:2.0} },
   { id:'s25', rank:'S', name:'殉教者の呪い', icon:'💀', cost:20,
     desc:'被ダメ3倍・必ず負け、生存で同量返し', detail:'己を犠牲にする究極の賭け。このターン相手から受けるダメージが3倍になり必ずじゃんけんに負ける。しかし生き残れた場合、受けた同量のダメージをそのまま相手に返す。', effect:{martyrdom:true} },
-  { id:'s26', rank:'S', name:'カードスティール', icon:'🕵️', cost:20,
-    desc:'相手のドロー済みカード2枚を次ターンデッキに戻す', detail:'相手の手札に忍び込み、カード2枚を奪い去る。相手のドロー済みカード2枚を選択し、次のターン相手のデッキに戻す。', effect:{stealCards:2} },
+  { id:'s26', rank:'S', name:'カードデリート', icon:'🕵️', cost:20,
+    desc:'相手のドロー済みカード3枚を次ターンデッキに戻す', detail:'相手の手札に忍び込み、カードを消す。相手のドロー済みカード3枚を選択し、次のターン相手のデッキに戻す。', effect:{stealCards:3} },
   { id:'s27', rank:'S', name:'絶対覇道', icon:'👑', cost:20,
-    desc:'ダメージ+18 + 被ダメ-10 + HP10回復', detail:'王者の力が全てを圧倒する。勝利時与ダメ+18、被ダメ-10、HP10回復を同時発動する究極の万能カード。', effect:{dmgUp:18, dmgReduce:10, heal:10} },
+    desc:'ダメージ+13 + 被ダメ-10 + HP10回復', detail:'王者の力が全てを圧倒する。勝利時与ダメ+13、被ダメ-10、HP10回復を同時発動する究極の万能カード。', effect:{dmgUp:13, dmgReduce:10, heal:10} },
   { id:'s28', rank:'S', name:'真空斬', icon:'🌬️', cost:20,
-    desc:'ダメージ+30 + 自HP-15', detail:'真空の刃で全てを切り裂く。HP15を代償に勝利時与ダメ+30を得る超高火力カード。HP管理必須。', effect:{dmgUp:30, selfDmg:15} },
+    desc:'ダメージ+35 + 自HP-20', detail:'真空の刃で全てを切り裂く。HP20を代償に勝利時与ダメ+35を得る超高火力カード。HP管理必須。', effect:{dmgUp:35, selfDmg:20} },
   { id:'s29', rank:'S', name:'不死の誓い', icon:'💎', cost:20,
-    desc:'このターン受けたダメージを0にし HP30回復', detail:'不死の誓いが傷を完全に防ぐ。完全シールド発動かつHP30も回復する究極の生存カード。', effect:{shield:999, heal:30} },
+    desc:'このターン受けダメージを0にし HP30回復', detail:'不死の誓いが傷を完全に防ぐ。完全シールド発動かつHP30も回復する生存カード。', effect:{shield:999, heal:30} },
   { id:'s30', rank:'S', name:'次元爆弾', icon:'💣', cost:20,
-    desc:'相手HP-25 直接ダメ + 自HP-5', detail:'次元の歪みで爆発を引き起こす。自HP5を犠牲にし相手に直接25ダメージを与える最強直撃カード。', effect:{directDmgEnemy:25, selfDmg:5} },
+    desc:'相手HP-20 直接ダメ + 自HP-5', detail:'次元の歪みで爆発を引き起こす。自HP5を犠牲にし相手に直接20ダメージを与えるカード。', effect:{directDmgEnemy:20, selfDmg:5} },
   { id:'s31', rank:'S', name:'運命逆転', icon:'🃏', cost:20,
     desc:'自分と相手のHPを入れ替える', detail:'運命を書き換える禁断の魔法。自分と相手のHPを完全に入れ替える。劣勢の時こそ真価を発揮する逆転専用Sカード。', effect:{swapHP:true} },
 
@@ -1933,15 +1933,15 @@ const CARD_DB = [
   { id:'a25', rank:'A', name:'ダブルリスク', icon:'⚠️', cost:10,
     desc:'両者の受けるダメージが2倍になる', detail:'危険な賭けに出る。このターン自分と相手の双方が受けるダメージが2倍になる諸刃の剣カード。', effect:{doubleAllDamage:true} },
   { id:'a26', rank:'A', name:'大地の守護', icon:'🌍', cost:10,
-    desc:'被ダメ-10 + HP5回復', detail:'大地の力が全身を包んで守る。被ダメ-10とHP5回復を同時に発動する鉄壁の防御カード。', effect:{dmgReduce:10, heal:5} },
+    desc:'被ダメ-10 + HP10回復', detail:'大地の力が全身を包んで守る。被ダメ-10とHP10回復を同時に発動する鉄壁の防御カード。', effect:{dmgReduce:10, heal:10} },
   { id:'a27', rank:'A', name:'烈火拳', icon:'🔥', cost:10,
-    desc:'ダメージ+15 + 自HP-3', detail:'己を燃やし尽くす炎の拳。HP3を代償にこのターンの与ダメ+15を得る高火力カード。', effect:{dmgUp:15, selfDmg:3} },
+    desc:'ダメージ+15 + 自HP-5', detail:'己を燃やし尽くす炎の拳。HP5を代償にこのターンの与ダメ+15を得る高火力カード。', effect:{dmgUp:15, selfDmg:5} },
   { id:'a28', rank:'A', name:'影分身', icon:'👥', cost:10,
-    desc:'相手HP-8 直接ダメ', detail:'影が実体を持ち相手を直接攻撃する。じゃんけん結果に関わらず相手に直接8ダメージを与える。', effect:{directDmgEnemy:8} },
+    desc:'相手HP-10 直接ダメ', detail:'影が実体を持ち相手を直接攻撃する。じゃんけん結果に関わらず相手に直接10ダメージを与える。', effect:{directDmgEnemy:10} },
   { id:'a29', rank:'A', name:'フェニックスブレス', icon:'🦅', cost:10,
-    desc:'HP12回復 + ダメージ+5', detail:'不死鳥の炎が体を癒し力をみなぎらせる。HP12回復と勝利時与ダメ+5を同時に発動するバランス型カード。', effect:{heal:12, dmgUp:5} },
+    desc:'HP15回復 + ダメージ+5', detail:'不死鳥の炎が体を癒し力をみなぎらせる。HP15回復と勝利時与ダメ+5を同時に発動するバランス型カード。', effect:{heal:15, dmgUp:5} },
   { id:'a30', rank:'A', name:'雷鳴連打', icon:'⚡', cost:10,
-    desc:'あいこ時追加ダメ+10 + ダメージ+5', detail:'連続する雷撃で相手を圧倒する。勝利時与ダメ+5に加え、あいこ時にも追加で10ダメージを与える攻撃カード。', effect:{dmgUp:5, drawDmg:10} },
+    desc:'あいこ時ダメ+10 + ダメージ+5', detail:'連続する雷撃で相手を圧倒する。勝利時与ダメ+5に加え、あいこ時にも10ダメージを与える攻撃カード。', effect:{dmgUp:5, drawDmg:10} },
 ];
 
 // ============================================================
@@ -2072,7 +2072,7 @@ const TUTORIAL_PAGES = [
         <div class="tutorial-section-title">💥 ダメージ計算</div>
         <div class="tutorial-text">
           じゃんけんに<b>勝った側</b>が相手にダメージを与えます。<br><br>
-          基本ダメージは<b>10</b>です。<br>
+          基本ダメージは<b>20</b>です。<br>
           カードの効果やターン経過でこの値が変化します。<br><br>
           <span class="hl-cyan">あいこ</span>は両者に5ダメージ（この値もターン経過で増えます）。
         </div>
@@ -2180,7 +2180,7 @@ const TUTORIAL_PAGES = [
     `
   },
   {
-    title: 'カードの効果一覧',
+    title: 'カードの効果の例',
     emoji: '✨',
     html: `
       <div class="tutorial-section">
