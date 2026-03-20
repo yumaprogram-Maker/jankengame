@@ -375,10 +375,11 @@ body {
 #screen-battle {
   justify-content: flex-start;
   padding: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .battle-wrap {
-  width: 100%; height: 100%;
+  width: 100%; min-height: 100%;
   display: flex; flex-direction: column;
   position: relative;
 }
@@ -637,12 +638,13 @@ body {
   background: rgba(5,5,15,0.9);
   flex-shrink: 0;
   transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease, padding 0.4s ease;
-  overflow: hidden;
-  max-height: 400px;
+  overflow: visible;
+  max-height: none;
   opacity: 1;
 }
 .hand-select-area.hidden-select {
   max-height: 0;
+  overflow: hidden;
   opacity: 0;
   padding-top: 0;
   padding-bottom: 0;
