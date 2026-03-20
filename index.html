@@ -1395,7 +1395,13 @@ body {
 .tutorial-win-cell .wc-em2 { font-size: 16px; display: block; }
 
 /* ===== DIFFICULTY SCREEN ===== */
-#screen-difficulty { gap: 20px; }
+#screen-difficulty {
+  justify-content: flex-start;
+  overflow-y: auto;
+  padding-top: 24px;
+  padding-bottom: 24px;
+  gap: 20px;
+}
 .diff-section {
   width: 100%; max-width: 400px;
   background: var(--surface);
