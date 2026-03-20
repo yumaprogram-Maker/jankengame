@@ -1393,6 +1393,81 @@ body {
 .tutorial-win-cell .wc-em { font-size: 16px; display: block; }
 .tutorial-win-cell .wc-arrow { color: var(--accent3); font-size: 11px; }
 .tutorial-win-cell .wc-em2 { font-size: 16px; display: block; }
+
+/* ===== DIFFICULTY SCREEN ===== */
+#screen-difficulty { gap: 20px; }
+.diff-section {
+  width: 100%; max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+.diff-section-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 12px; letter-spacing: 2px;
+  color: var(--text-dim); margin-bottom: 14px;
+}
+.diff-slider-row {
+  display: flex; align-items: center; gap: 12px;
+}
+.diff-slider {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 6px; border-radius: 3px; outline: none;
+  background: var(--surface2); cursor: pointer;
+  border: 1px solid var(--border);
+}
+.diff-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 22px; height: 22px;
+  border-radius: 50%; cursor: pointer;
+  background: linear-gradient(135deg, #a020f0, #5500cc);
+  box-shadow: 0 0 12px rgba(160,32,240,0.6);
+  border: 2px solid rgba(255,255,255,0.2);
+}
+.diff-slider::-moz-range-thumb {
+  width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+  background: linear-gradient(135deg, #a020f0, #5500cc);
+  box-shadow: 0 0 12px rgba(160,32,240,0.6);
+  border: 2px solid rgba(255,255,255,0.2);
+}
+.diff-val-badge {
+  font-family: 'Orbitron', monospace; font-weight: 900;
+  font-size: 18px; color: var(--accent3); min-width: 48px;
+  text-align: right;
+}
+.ai-level-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+}
+.ai-level-btn {
+  padding: 12px 8px; border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--surface2); cursor: pointer;
+  text-align: center; transition: all 0.2s;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.ai-level-btn.active {
+  border-color: #a020f0;
+  background: rgba(160,32,240,0.15);
+  box-shadow: 0 0 20px rgba(160,32,240,0.3);
+}
+.ai-level-btn:active { transform: scale(0.97); }
+.ai-level-icon { font-size: 24px; margin-bottom: 4px; }
+.ai-level-name {
+  font-family: 'Orbitron', monospace; font-size: 11px;
+  font-weight: 700; letter-spacing: 1px;
+  color: var(--text); margin-bottom: 4px;
+}
+.ai-level-desc { font-size: 10px; color: var(--text-dim); line-height: 1.4; }
+.diff-preview-box {
+  width: 100%; max-width: 400px;
+  background: rgba(160,32,240,0.08);
+  border: 1px solid rgba(160,32,240,0.3);
+  border-radius: 12px; padding: 12px 16px;
+  font-size: 12px; color: var(--text-dim);
+  text-align: center; font-family: 'Orbitron', monospace;
+  letter-spacing: 1px; line-height: 1.7;
+}
+.diff-preview-box span { color: var(--accent3); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -1408,8 +1483,67 @@ body {
   </div>
   <div style="display:flex;flex-direction:column;gap:14px;width:100%;max-width:300px;align-items:center;">
     <button class="btn btn-gold" onclick="Audio.bgm('title'); startFromTitle('online')" style="font-size:16px;">🌐 通信対戦</button>
-    <button class="btn btn-primary" onclick="Audio.bgm('title'); startFromTitle('solo')" style="background:linear-gradient(135deg,#a020f0,#5500cc);box-shadow:0 0 30px rgba(160,32,240,0.4);">🤖 ソロプレイ</button>
+    <button class="btn btn-primary" onclick="Audio.bgm('title'); openDifficultyScreen()" style="background:linear-gradient(135deg,#a020f0,#5500cc);box-shadow:0 0 30px rgba(160,32,240,0.4);">🤖 ソロプレイ</button>
     <button class="btn btn-primary" onclick="Audio.sfx('click'); showTutorial()" style="background:linear-gradient(135deg,#00c896,#007755);box-shadow:0 0 30px rgba(0,200,150,0.4);font-size:14px;">📖 チュートリアル</button>
+  </div>
+</div>
+
+<!-- DIFFICULTY SETTINGS -->
+<div id="screen-difficulty" class="screen hidden">
+  <div class="screen-title" style="color:#c060ff;">⚙️ DIFFICULTY</div>
+  <div class="screen-subtitle" style="margin-bottom:4px;">CPU難易度の設定</div>
+
+  <!-- デッキ最大コスト -->
+  <div class="diff-section">
+    <div class="diff-section-title">🃏 敵デッキ 最大コスト</div>
+    <div class="diff-slider-row">
+      <span style="font-size:11px;color:var(--text-dim);font-family:'Orbitron',monospace;white-space:nowrap;">80</span>
+      <input type="range" class="diff-slider" id="diff-cost-slider"
+        min="80" max="320" step="40" value="200"
+        oninput="updateDiffDisplay()">
+      <span style="font-size:11px;color:var(--text-dim);font-family:'Orbitron',monospace;white-space:nowrap;">320</span>
+      <div class="diff-val-badge" id="diff-cost-val">200</div>
+    </div>
+    <div style="font-size:10px;color:var(--text-dim);margin-top:8px;line-height:1.5;">
+      低コスト → 弱いカードのみ ／ 高コスト → 強力なSランクカード多数
+    </div>
+  </div>
+
+  <!-- AI レベル -->
+  <div class="diff-section">
+    <div class="diff-section-title">🧠 CPU AIレベル</div>
+    <div class="ai-level-grid">
+      <div class="ai-level-btn active" id="ai-btn-0" onclick="selectAILevel(0)">
+        <div class="ai-level-icon">🐣</div>
+        <div class="ai-level-name">RANDOM</div>
+        <div class="ai-level-desc">完全ランダム。手もカードも無作為</div>
+      </div>
+      <div class="ai-level-btn" id="ai-btn-1" onclick="selectAILevel(1)">
+        <div class="ai-level-icon">🤔</div>
+        <div class="ai-level-name">BASIC</div>
+        <div class="ai-level-desc">自分のHPが低い時は回復・防御カードを優先</div>
+      </div>
+      <div class="ai-level-btn" id="ai-btn-2" onclick="selectAILevel(2)">
+        <div class="ai-level-icon">🧠</div>
+        <div class="ai-level-name">SMART</div>
+        <div class="ai-level-desc">HP・相手の予告・デッキ残量を考慮して行動</div>
+      </div>
+      <div class="ai-level-btn" id="ai-btn-3" onclick="selectAILevel(3)">
+        <div class="ai-level-icon">👑</div>
+        <div class="ai-level-name">MASTER</div>
+        <div class="ai-level-desc">最適な手とカードを選択し、積極的に予告も活用</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- プレビュー -->
+  <div class="diff-preview-box" id="diff-preview">
+    読込中…
+  </div>
+
+  <div style="display:flex;gap:12px;width:100%;max-width:400px;">
+    <button class="btn btn-sm" onclick="showScreen('title')" style="flex:1;padding:14px;">← BACK</button>
+    <button class="btn btn-primary" onclick="startSoloWithDifficulty()" style="flex:2;max-width:none;">BATTLE START 🤖</button>
   </div>
 </div>
 
@@ -1618,11 +1752,20 @@ body {
 <div id="log-modal">
   <div class="log-modal-inner">
     <div class="log-modal-header">
-      <div class="log-modal-title">⚙️ BATTLE LOG</div>
+      <div class="log-modal-title" id="log-modal-title">⚙️ SETTINGS</div>
       <button class="log-modal-close" onclick="closeLogModal()">✕ CLOSE</button>
     </div>
+    <!-- Tab bar -->
+    <div id="log-tab-bar" style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <button id="log-tab-log" onclick="switchLogTab('log')" style="flex:1;padding:10px;background:rgba(0,245,255,0.1);border:none;border-bottom:2px solid var(--accent);color:var(--accent);font-family:'Orbitron',monospace;font-size:11px;cursor:pointer;letter-spacing:1px;">📋 ログ</button>
+      <button id="log-tab-cpu" onclick="switchLogTab('cpu')" style="flex:1;padding:10px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-dim);font-family:'Orbitron',monospace;font-size:11px;cursor:pointer;letter-spacing:1px;">🤖 CPU情報</button>
+    </div>
+    <!-- Log list -->
     <div class="log-list" id="log-list">
       <div style="color:var(--text-dim);font-size:12px;text-align:center;padding:20px;font-family:Orbitron,monospace;">ログはありません</div>
+    </div>
+    <!-- CPU Info panel -->
+    <div id="cpu-info-panel" style="display:none;flex:1;overflow-y:auto;padding:16px;flex-direction:column;gap:10px;">
     </div>
   </div>
 </div>
@@ -1985,7 +2128,7 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById('screen-' + id).classList.remove('hidden');
   // BGM per screen
-  if (id === 'title' || id === 'deck' || id === 'name' || id === 'tutorial') Audio.bgm('title');
+  if (id === 'title' || id === 'deck' || id === 'name' || id === 'tutorial' || id === 'difficulty') Audio.bgm('title');
   if (id === 'match') Audio.bgm('match');
   if (id === 'battle') { Audio.bgm('battle'); buildSoundControls(); }
 }
@@ -1993,6 +2136,58 @@ function showScreen(id) {
 function startFromTitle(mode) {
   gameMode = mode || 'online';
   Audio.sfx('click');
+  if (!localStorage.getItem('janken_name')) {
+    showScreen('name');
+  } else {
+    playerName = localStorage.getItem('janken_name');
+    showScreen('deck');
+    initDeckScreen();
+  }
+}
+
+// ============================================================
+// DIFFICULTY SETTINGS (Solo)
+// ============================================================
+let soloAILevel = 0;       // 0=Random 1=Basic 2=Smart 3=Master
+let soloMaxCost = 200;     // 80~320
+
+const AI_LEVEL_LABELS = ['RANDOM 🐣', 'BASIC 🤔', 'SMART 🧠', 'MASTER 👑'];
+const AI_LEVEL_DESCS = [
+  'CPUは完全ランダムで行動します',
+  'HPが低い時は回復カードを優先します',
+  '残りHP・相手の予告・デッキ残量を考慮します',
+  '最適な手とカードを選び、予告も積極的に活用します'
+];
+const COST_LABEL = { 80:'B級のみ (コスト80)', 120:'B中心 (コスト120)', 160:'A中心 (コスト160)', 200:'標準 (コスト200)', 240:'S多め (コスト240)', 280:'上級 (コスト280)', 320:'最強 (コスト320)' };
+
+function openDifficultyScreen() {
+  Audio.sfx('click');
+  gameMode = 'solo';
+  showScreen('difficulty');
+  updateDiffDisplay();
+}
+
+function selectAILevel(level) {
+  soloAILevel = level;
+  Audio.sfx('click');
+  [0,1,2,3].forEach(i => {
+    document.getElementById('ai-btn-' + i).classList.toggle('active', i === level);
+  });
+  updateDiffDisplay();
+}
+
+function updateDiffDisplay() {
+  const costSlider = document.getElementById('diff-cost-slider');
+  soloMaxCost = parseInt(costSlider.value);
+  document.getElementById('diff-cost-val').textContent = soloMaxCost;
+  const preview = document.getElementById('diff-preview');
+  preview.innerHTML =
+    `敵デッキ最大コスト: <span>${soloMaxCost}</span> (${COST_LABEL[soloMaxCost] || soloMaxCost})<br>` +
+    `AI: <span>${AI_LEVEL_LABELS[soloAILevel]}</span>`;
+}
+
+function startSoloWithDifficulty() {
+  Audio.sfx('confirm');
   if (!localStorage.getItem('janken_name')) {
     showScreen('name');
   } else {
@@ -2874,35 +3069,121 @@ async function startBattle() {
 }
 
 function buildAIDeck() {
-  // randomDeck と同じロジックで厳密に16枚・コスト200以内
-  const sel = {};
-  const pool = shuffle([...CARD_DB]);
-  let cost = 0, count = 0, tries = 0;
-  while (count < 16 && tries < 500) {
-    tries++;
-    const card = pool[tries % pool.length];
-    const cur = sel[card.id] || 0;
-    if (cur >= 2) continue;
-    if (cost + card.cost > 200) continue;
-    sel[card.id] = cur + 1;
-    cost += card.cost;
-    count++;
+  // soloMaxCost に従ってデッキを生成（必ず16枚・コストを最大限活用）
+  const maxCost = (typeof soloMaxCost !== 'undefined') ? soloMaxCost : 200;
+  const TARGET = 16;
+
+  // ── STEP 1: コスト上限から使用可能なカードプールを決定 ──
+  // 各枚数の最小コストを計算して、そのコスト内に収まるカードを使用
+  // 16枚×最小コスト5(B)=80が絶対最低ライン
+  let cardPool;
+  if (maxCost <= 80) {
+    cardPool = CARD_DB.filter(c => c.cost <= 5);
+  } else if (maxCost <= 120) {
+    cardPool = CARD_DB.filter(c => c.cost <= 10);
+  } else {
+    cardPool = [...CARD_DB];
   }
-  // 不足分はBランクで補完
-  if (count < 16) {
-    const bCards = shuffle(CARD_DB.filter(c => c.rank === 'B'));
-    for (const card of bCards) {
-      while (count < 16 && cost + card.cost <= 200 && (sel[card.id]||0) < 2) {
-        sel[card.id] = (sel[card.id]||0) + 1;
-        cost += card.cost;
-        count++;
-      }
-      if (count >= 16) break;
+
+  // ── STEP 2: コストを使い切るように枚数構成を計算 ──
+  // 目標: 16枚合計コストが maxCost にできるだけ近くなるよう選択
+  // まず全16枚をランダムに仮選択し、コスト余剰があれば高コストカードに差し替える
+
+  // PHASE A: B枚（コスト5）で16枚確保
+  const allB = shuffle(CARD_DB.filter(c => c.rank === 'B'));
+  const allA = shuffle(CARD_DB.filter(c => c.rank === 'A'));
+  const allS = shuffle(CARD_DB.filter(c => c.rank === 'S'));
+
+  // 難易度別の構成比率を計算
+  // maxCost=80  → B×16(コスト80)
+  // maxCost=120 → A数枚+B残り
+  // maxCost=160 → A多め+B残り
+  // maxCost=200 → S少々+A多め+B残り
+  // maxCost=240+ → S多め+A+B
+
+  // ① まず全スロットをBで埋める（ベースコスト=16×5=80）
+  const sel = {}; // id → 枚数
+  const baseDeck = [];
+  let usedCost = 0;
+
+  // コストに収まるカードから16枚選ぶ（各最大2枚）
+  const poolShuffled = shuffle([...cardPool]);
+  for (const card of poolShuffled) {
+    if (baseDeck.length >= TARGET) break;
+    const canAdd = (sel[card.id] || 0) < 2;
+    if (canAdd && usedCost + card.cost <= maxCost) {
+      sel[card.id] = (sel[card.id] || 0) + 1;
+      baseDeck.push(card.id);
+      usedCost += card.cost;
     }
   }
-  const deck = [];
-  Object.entries(sel).forEach(([id, cnt]) => { for (let i = 0; i < cnt; i++) deck.push(id); });
-  return shuffle(deck);
+
+  // ② 枚数が足りなければBで補完（コスト5は必ず収まる）
+  if (baseDeck.length < TARGET) {
+    const bPool = shuffle(CARD_DB.filter(c => c.rank === 'B'));
+    for (const card of bPool) {
+      if (baseDeck.length >= TARGET) break;
+      while (baseDeck.length < TARGET && (sel[card.id] || 0) < 2) {
+        sel[card.id] = (sel[card.id] || 0) + 1;
+        baseDeck.push(card.id);
+        usedCost += card.cost;
+      }
+    }
+  }
+
+  // ③ コスト余剰を使って低コストカードを高コストカードに差し替え（コストを最大限活用）
+  // 差し替え候補: 手持ちのBカード → Aカード(差分+5) or Sカード(差分+15/+10)
+  let improved = true;
+  let swapPass = 0;
+  while (improved && swapPass < 50) {
+    improved = false;
+    swapPass++;
+    const remaining = maxCost - usedCost;
+    if (remaining < 5) break; // これ以上改善余地なし
+
+    // 差し替え候補の高コストカード（コスト差がremainingに収まるもの）
+    const upgrades = shuffle(CARD_DB.filter(c => {
+      // このカードをまだ2枚持っていない
+      if ((sel[c.id] || 0) >= 2) return false;
+      // コスト増分がremaining以内
+      return c.cost <= 5 + remaining; // とりあえず全部候補
+    }));
+
+    // 差し替え元（現在デッキ内の低コストカード）
+    const downgrades = [...baseDeck].sort((a, b) => {
+      return (getCard(a)?.cost || 0) - (getCard(b)?.cost || 0);
+    });
+
+    let swapped = false;
+    for (const upCard of upgrades) {
+      if (swapped) break;
+      for (let di = 0; di < downgrades.length; di++) {
+        const downId = downgrades[di];
+        const downCard = getCard(downId);
+        if (!downCard) continue;
+        const costDiff = upCard.cost - downCard.cost;
+        if (costDiff <= 0) continue; // コスト増加にならない
+        if (costDiff > remaining) continue; // 超過してしまう
+        if (upCard.id === downId) continue; // 同じカード
+        if ((sel[upCard.id] || 0) >= 2) continue;
+
+        // 差し替え実行
+        const idx = baseDeck.indexOf(downId);
+        baseDeck.splice(idx, 1);
+        sel[downId] = Math.max(0, (sel[downId] || 0) - 1);
+        if (sel[downId] === 0) delete sel[downId];
+
+        baseDeck.push(upCard.id);
+        sel[upCard.id] = (sel[upCard.id] || 0) + 1;
+        usedCost += costDiff;
+        improved = true;
+        swapped = true;
+        break;
+      }
+    }
+  }
+
+  return shuffle([...baseDeck]);
 }
 
 function shuffle(arr) {
@@ -2925,6 +3206,7 @@ function startSoloBattle() {
   enemyName = 'CPU';
 
   const aiDeck = buildAIDeck();
+  battle.cpuFullDeck = [...aiDeck]; // CPU情報パネル用にフルデッキを保存
 
   // init battle state
   battle.playerHP = 100; battle.enemyHP = 100;
@@ -2951,6 +3233,7 @@ function startSoloBattle() {
 
   showScreen('battle');
   clearBattleLog();
+  clearCPUTurnLogs();
   showGearBtn(true);
   document.getElementById('player-name-display').textContent = playerName.substring(0,8);
   document.getElementById('enemy-name-display').textContent = 'CPU';
@@ -2961,17 +3244,297 @@ function startSoloBattle() {
 // CPU がアクションを選択する（ソロプレイ用）
 function getCPUAction() {
   const hands = ['guu','paa','choki'];
-  const hand = hands[Math.floor(Math.random() * 3)];
-  // CPUは手札からランダムに0〜2枚選択
-  const maxCards = Math.min(3, battle.enemyHand.length);
-  const numCards = Math.floor(Math.random() * (maxCards + 1));
-  const handCopy = [...battle.enemyHand];
-  const chosen = [];
-  for (let i = 0; i < numCards; i++) {
-    const idx = Math.floor(Math.random() * handCopy.length);
-    chosen.push(handCopy.splice(idx, 1)[0]);
+  const level = (typeof soloAILevel !== 'undefined') ? soloAILevel : 0;
+
+  // ----- LEVEL 0: 完全ランダム -----
+  if (level === 0) {
+    const hand = hands[Math.floor(Math.random() * 3)];
+    const maxCards = Math.min(3, battle.enemyHand.length);
+    const numCards = Math.floor(Math.random() * (maxCards + 1));
+    const handCopy = [...battle.enemyHand];
+    const chosen = [];
+    for (let i = 0; i < numCards; i++) {
+      const idx = Math.floor(Math.random() * handCopy.length);
+      chosen.push(handCopy.splice(idx, 1)[0]);
+    }
+    _recordCPUTurnLog(battle.turn, hand, chosen, 'ランダム', '', '完全ランダムモード', battle.enemyHP, battle.playerHP);
+    return { hand, cards: chosen };
   }
-  return { hand, cards: chosen };
+
+  // ----- LEVEL 1: BASIC — 30%でMASTERロジック、残りは本来のBASIC -----
+  if (level === 1) {
+    if (Math.random() < 0.30) {
+      return _getCPUActionMaster('BASIC→MASTERロジック適用(30%)');
+    }
+    const hand = hands[Math.floor(Math.random() * 3)];
+    const chosen = [];
+    const handCopy = [...battle.enemyHand];
+    const enemyHP = battle.enemyHP;
+    if (enemyHP <= 30) {
+      const healCards = handCopy.filter(id => {
+        const c = getCard(id);
+        return c && (c.effect.heal || c.effect.dmgReduce || c.effect.shield || c.effect.drain);
+      });
+      const pool = healCards.length > 0 ? healCards : handCopy;
+      const take = Math.min(3, pool.length);
+      const shuffled = shuffle([...pool]);
+      for (let i = 0; i < take; i++) chosen.push(shuffled[i]);
+    } else {
+      const numCards = Math.floor(Math.random() * Math.min(3, handCopy.length + 1)) - 1;
+      const shuffled = shuffle([...handCopy]);
+      for (let i = 0; i < Math.max(0, numCards); i++) chosen.push(shuffled[i]);
+    }
+    const situation1 = enemyHP <= 30 ? `CPU瀕死(HP${enemyHP})→回復・防御優先` : `通常→ランダム選択`;
+    _recordCPUTurnLog(battle.turn, hand, chosen, 'ランダム', '', situation1, battle.enemyHP, battle.playerHP);
+    return { hand, cards: chosen };
+  }
+
+  // ----- LEVEL 2: SMART — 50%でMASTERロジック、残りはSMART本来 -----
+  if (level === 2) {
+    if (Math.random() < 0.50) {
+      return _getCPUActionMaster('SMART→MASTERロジック適用(50%)');
+    }
+    const enemyHP = battle.enemyHP;
+    const playerHP = battle.playerHP;
+    const deckLeft = battle.enemyDeckRemain.length;
+    const handCopy = [...battle.enemyHand];
+    const chosen = [];
+    const counterMap2 = { guu: 'paa', paa: 'choki', choki: 'guu' };
+    let chosenHand;
+    const playerDecl = battle.playerDeclaration;
+    if (playerDecl && Math.random() < 0.7) {
+      chosenHand = counterMap2[playerDecl];
+    } else {
+      chosenHand = hands[Math.floor(Math.random() * 3)];
+    }
+    const scoreCard2 = (id) => {
+      const c = getCard(id);
+      if (!c) return 0;
+      let score = 0;
+      if (enemyHP <= 25) {
+        score += (c.effect.heal || 0) * 2;
+        score += (c.effect.dmgReduce || 0) * 1.5;
+        score += c.effect.shield ? 30 : 0;
+        score += (c.effect.drain || 0) * 2;
+      } else if (playerHP <= 25) {
+        score += (c.effect.dmgUp || 0) * 2;
+        score += (c.effect.directDmgEnemy || 0) * 2;
+        score += (c.effect.drain || 0);
+      } else {
+        score += (c.effect.dmgUp || 0);
+        score += (c.effect.heal || 0) * 0.8;
+        score += (c.effect.dmgReduce || 0) * 0.8;
+        score += (c.effect.drain || 0);
+        score += (c.effect.directDmgEnemy || 0);
+      }
+      if (deckLeft < 4) score += 5;
+      return score;
+    };
+    const scored2 = handCopy.map(id => ({ id, score: scoreCard2(id) })).sort((a,b) => b.score - a.score);
+    for (let i = 0; i < Math.min(3, scored2.length); i++) {
+      if (scored2[i].score > 0 && Math.random() < 0.75) chosen.push(scored2[i].id);
+    }
+    const smartHandReason = playerDecl && Math.random() < 0.7 ? `相手予告(${playerDecl})カウンター` : 'ランダム';
+    const smartSit = enemyHP <= 25 ? `CPU瀕死(HP${enemyHP})→回復優先` : playerHP <= 25 ? `相手瀕死(HP${playerHP})→攻撃優先` : `通常→HP/予告/デッキ考慮`;
+    _recordCPUTurnLog(battle.turn, chosenHand, chosen, smartHandReason, '', smartSit, battle.enemyHP, battle.playerHP);
+    return { hand: chosenHand, cards: chosen };
+  }
+
+  // ----- LEVEL 3: MASTER -----
+  return _getCPUActionMaster('MASTERロジック');
+}
+
+// MASTERロジック共通関数（BASIC/SMARTからも呼ばれる）
+function _getCPUActionMaster(callerLabel) {
+  const hands = ['guu','paa','choki'];
+  const counterMap = { guu: 'paa', paa: 'choki', choki: 'guu' };
+  const enemyHP = battle.enemyHP;
+  const playerHP = battle.playerHP;
+  const handCopy = [...battle.enemyHand];
+  const playerDecl = battle.playerDeclaration;
+  const myDecl = battle.enemyDeclaration;
+  const deckLeft = battle.enemyDeckRemain.length;
+
+  // ── HP状況の分類 ──
+  const isCPUCritical   = enemyHP <= 20;   // 瀕死（最優先回復）
+  const isCPUDanger     = enemyHP <= 40;   // 危険圏
+  const isCPULow        = enemyHP <= 60;   // 余裕なし
+  const isPlayerCritical= playerHP <= 20;  // 相手瀕死（フィニッシュ狙い）
+  const isPlayerLow     = playerHP <= 40;  // 相手危険圏（攻め時）
+
+  // ── カードスコアリング（状況重み付け強化版）──
+  const scoreCard = (id) => {
+    const c = getCard(id);
+    if (!c) return 0;
+    let score = 0;
+    const e = c.effect;
+
+    // 運命操作・サードアイは常に高評価（勝利確定系）
+    if (e.forceEnemy)       score += 45;
+    if (e.peekAndReselect)  score += 40;
+
+    if (isCPUCritical) {
+      // ★★★ 瀕死 (HP≤20): 生存が最優先。回復・防御を最重視 ★★★
+      score += (e.heal || 0) * 5;                     // 回復：最高優先
+      score += e.shield ? 80 : 0;                     // 完全シールド：超優先
+      score += (e.dmgReduce || 0) * 4;                // 被ダメ軽減：高優先
+      score += (e.drain || 0) * 4;                    // ドレイン：回復+攻撃
+      score += e.swapHP && playerHP > enemyHP ? 100 : 0; // HP交換：逆転カード
+      score += (e.directDmgEnemy || 0) * 1;           // 直接ダメは補助的に
+      score += (e.dmgUp || 0) * 0.5;                  // 攻撃強化は後回し
+      // 自傷カードは危険なので大幅減点
+      score -= (e.selfDmg || 0) * 6;
+      score -= e.martyrdom ? 60 : 0;                  // 殉教者は危険
+    } else if (isCPUDanger) {
+      // ★★ 危険圏 (HP≤40): 回復・防御を重視しつつ攻撃も考慮 ★★
+      score += (e.heal || 0) * 3;
+      score += e.shield ? 55 : 0;
+      score += (e.dmgReduce || 0) * 2.5;
+      score += (e.drain || 0) * 3;
+      score += e.swapHP && playerHP > enemyHP ? 70 : 0;
+      score += (e.directDmgEnemy || 0) * 1.5;
+      score += (e.dmgUp || 0) * 1;
+      score -= (e.selfDmg || 0) * 3;
+      score -= e.martyrdom ? 40 : 0;
+    } else if (isCPULow) {
+      // ★ 余裕なし (HP≤60): バランス重視で回復も優先 ★
+      score += (e.heal || 0) * 2;
+      score += e.shield ? 30 : 0;
+      score += (e.dmgReduce || 0) * 1.5;
+      score += (e.drain || 0) * 2;
+      score += (e.dmgUp || 0) * 1.5;
+      score += (e.directDmgEnemy || 0) * 1.5;
+      score -= (e.selfDmg || 0) * 1.5;
+    } else if (isPlayerCritical) {
+      // ★★★ 相手瀕死 (playerHP≤20): フィニッシュ最優先 ★★★
+      score += (e.dmgUp || 0) * 4;
+      score += (e.directDmgEnemy || 0) * 4;
+      score += (e.drain || 0) * 3;
+      score += e.forceEnemy ? 60 : 0;
+      score += e.doubleAllDamage ? 30 : 0;
+      score += (e.heal || 0) * 0.3;
+    } else if (isPlayerLow) {
+      // ★★ 相手危険圏 (playerHP≤40): 攻め重視 ★★
+      score += (e.dmgUp || 0) * 2.5;
+      score += (e.directDmgEnemy || 0) * 2.5;
+      score += (e.drain || 0) * 2;
+      score += (e.heal || 0) * 0.5;
+      score += e.doubleAllDamage ? 15 : 0;
+    } else {
+      // 通常: バランス選択
+      score += (e.dmgUp || 0) * 1.5;
+      score += (e.heal || 0) * 1.2;
+      score += (e.dmgReduce || 0) * 1.2;
+      score += (e.drain || 0) * 1.5;
+      score += (e.directDmgEnemy || 0) * 1.5;
+      score += e.shield ? 20 : 0;
+      score += (e.drawDmg || 0) * 1;
+    }
+
+    // デッキ残り少ない時はドロー系も評価
+    if (deckLeft < 4) score += 8;
+
+    // ランク補正
+    if (c.rank === 'S') score += 10;
+    if (c.rank === 'A') score += 5;
+
+    return score;
+  };
+
+  // ── カード選択（スコア上位を選択、最大3枚） ──
+  const scored = handCopy.map(id => ({ id, score: scoreCard(id) })).sort((a,b) => b.score - a.score);
+  const chosen = [];
+  for (let i = 0; i < Math.min(3, scored.length); i++) {
+    if (scored[i].score > 0) chosen.push(scored[i].id);
+  }
+
+  // ── STEP 1: 手の初期決定（HP状況も加味） ──
+  const roll = Math.random();
+  let chosenHand;
+  let handReason = '';
+
+  const canCounter    = !!playerDecl;
+  const canFollowDecl = !!myDecl;
+  const canCombo      = !!(battle.enemyLastHand && (battle.enemyCombo || 0) >= 1);
+
+  if (isCPUCritical) {
+    // 瀕死時: 手の選択でも生存を意識（相手予告カウンターを最優先）
+    if (canCounter && roll < 0.50) {
+      chosenHand = counterMap[playerDecl];
+      handReason = `【瀕死】相手予告(${playerDecl})カウンター(生存優先)`;
+    } else if (canFollowDecl && roll < 0.75) {
+      chosenHand = myDecl;
+      handReason = `【瀕死】自分の予告(${myDecl})通り`;
+    } else {
+      chosenHand = hands[Math.floor(Math.random() * 3)];
+      handReason = `【瀕死】ランダム選択`;
+    }
+  } else if (isPlayerCritical) {
+    // 相手瀕死: 攻撃的に予告カウンターを狙う
+    if (canCounter && roll < 0.45) {
+      chosenHand = counterMap[playerDecl];
+      handReason = `【相手瀕死】予告カウンター(フィニッシュ狙い)`;
+    } else if (canFollowDecl && roll < 0.65) {
+      chosenHand = myDecl;
+      handReason = `【相手瀕死】予告通り(${myDecl})`;
+    } else if (canCombo && roll < 0.80) {
+      chosenHand = battle.enemyLastHand;
+      handReason = `【相手瀕死】コンボ継続(${battle.enemyCombo}連)`;
+    } else {
+      chosenHand = hands[Math.floor(Math.random() * 3)];
+      handReason = `【相手瀕死】ランダム`;
+    }
+  } else {
+    // 通常の手選択ロジック（30/30/30/10）
+    if (canCounter && roll < 0.30) {
+      chosenHand = counterMap[playerDecl];
+      handReason = `相手予告(${playerDecl})へのカウンター`;
+    } else if (canFollowDecl && roll < 0.60) {
+      chosenHand = myDecl;
+      handReason = `自分の予告(${myDecl})通りの手`;
+    } else if (canCombo && roll < 0.70) {
+      chosenHand = battle.enemyLastHand;
+      handReason = `コンボ継続(${battle.enemyCombo}連)`;
+    } else {
+      chosenHand = hands[Math.floor(Math.random() * 3)];
+      handReason = 'ランダム選択';
+    }
+  }
+
+  // ── STEP 2: 状況文字列 ──
+  let cardSituation = '';
+  if (isCPUCritical)    cardSituation = `CPU瀕死(HP${enemyHP})→回復・防御・シールド最優先`;
+  else if (isCPUDanger) cardSituation = `CPU危険(HP${enemyHP})→回復・防御重視`;
+  else if (isCPULow)    cardSituation = `CPU低HP(HP${enemyHP})→回復も考慮`;
+  else if (isPlayerCritical) cardSituation = `相手瀕死(HP${playerHP})→攻撃フィニッシュ優先`;
+  else if (isPlayerLow)      cardSituation = `相手低HP(HP${playerHP})→攻め重視`;
+  else                       cardSituation = `通常→バランス選択`;
+
+  // ── STEP 3: カード内容で手を補正 ──
+  let handAdjustReason = '';
+
+  // 運命操作カード使用時 → 強制した手に勝てる手に確定変更
+  const destinyCard = chosen.find(id => { const c = getCard(id); return c && c.effect.forceEnemy; });
+  if (destinyCard) {
+    const forcedHand = getCard(destinyCard).effect.forceEnemy;
+    chosenHand = counterMap[forcedHand];
+    handAdjustReason = `運命操作(相手を${forcedHand}に強制)→${chosenHand}で確実勝利`;
+  }
+
+  // サードアイ使用時 → 相手の手に勝てる手に変更
+  const hasPeek = chosen.some(id => { const c = getCard(id); return c && c.effect.peekAndReselect; });
+  if (hasPeek && !destinyCard) {
+    if (playerDecl) {
+      chosenHand = counterMap[playerDecl];
+      handAdjustReason = `サードアイ使用→仮に相手予告カウンター(${chosenHand})、発動後に最適化`;
+    } else {
+      handAdjustReason = `サードアイ使用→発動後に相手の手を確認して最適化`;
+    }
+  }
+
+  const logReason = callerLabel !== 'MASTERロジック' ? `[${callerLabel}] ${handReason}` : handReason;
+  _recordCPUTurnLog(battle.turn, chosenHand, chosen, logReason, handAdjustReason, cardSituation, enemyHP, playerHP);
+  return { hand: chosenHand, cards: chosen };
 }
 
 // ============================================================
@@ -3125,9 +3688,50 @@ async function confirmDeclaration() {
   battle.playerDeclaration = myDecl;
 
   if (gameMode === 'solo') {
-    // CPUの予告（ランダム、25%の確率で予告なし）
-    const cpuHands = ['guu','paa','choki',null];
-    battle.enemyDeclaration = cpuHands[Math.floor(Math.random() * cpuHands.length)];
+    // CPUの予告（AIレベルに応じて変化）
+    const level = (typeof soloAILevel !== 'undefined') ? soloAILevel : 0;
+    const cpuHands = ['guu','paa','choki'];
+    if (level === 0) {
+      // ランダム（25%で予告なし）
+      const opts = [...cpuHands, null];
+      battle.enemyDeclaration = opts[Math.floor(Math.random() * opts.length)];
+    } else if (level === 1) {
+      // 40%で予告なし、残りはランダム
+      battle.enemyDeclaration = Math.random() < 0.4 ? null : cpuHands[Math.floor(Math.random()*3)];
+    } else if (level === 2) {
+      // 30%で予告なし、予告する場合は本当に使う手を予告（ブラフなし）
+      if (Math.random() < 0.3) {
+        battle.enemyDeclaration = null;
+      } else {
+        // プレイヤーの宣言があればそれに勝てる手を予告
+        const playerDecl = window._pendingDeclaration;
+        if (playerDecl && Math.random() < 0.6) {
+          const counterMap = { guu:'paa', paa:'choki', choki:'guu' };
+          battle.enemyDeclaration = counterMap[playerDecl];
+        } else {
+          battle.enemyDeclaration = cpuHands[Math.floor(Math.random()*3)];
+        }
+      }
+    } else {
+      // MASTER: 40%カウンター予告、40%ランダム予告（自分で守る）、10%コンボ継続予告、10%予告なし
+      const masterRoll = Math.random();
+      const counterMap = { guu:'paa', paa:'choki', choki:'guu' };
+      if (masterRoll < 0.10) {
+        // 予告なし
+        battle.enemyDeclaration = null;
+      } else if (masterRoll < 0.50 && window._pendingDeclaration) {
+        // 40%: 相手の予告に勝てる手を予告
+        battle.enemyDeclaration = counterMap[window._pendingDeclaration];
+      } else if (masterRoll < 0.90) {
+        // 40%: ランダムな手を予告（自分で使う手を宣言）
+        battle.enemyDeclaration = cpuHands[Math.floor(Math.random()*3)];
+      } else {
+        // 10%: コンボ継続手を予告
+        battle.enemyDeclaration = battle.enemyLastHand && (battle.enemyCombo||0) >= 1
+          ? battle.enemyLastHand
+          : cpuHands[Math.floor(Math.random()*3)];
+      }
+    }
     hideDeclarationOverlay();
     afterDeclarationPhase();
   } else {
@@ -5227,13 +5831,170 @@ function renderLogList() {
   list.scrollTop = list.scrollHeight;
 }
 
+// ============================================================
+// CPU TURN LOG SYSTEM
+// ============================================================
+const _cpuTurnLogs = [];   // { turn, hand, cards, handReason, adjustReason, situation, enemyHP, playerHP }
+
+function _recordCPUTurnLog(turn, hand, cards, handReason, adjustReason, situation, enemyHP, playerHP) {
+  _cpuTurnLogs.push({ turn, hand, cards: [...cards], handReason, adjustReason, situation, enemyHP, playerHP });
+}
+
+function clearCPUTurnLogs() { _cpuTurnLogs.length = 0; }
+
+let _currentLogTab = 'log';
+
 function openLogModal() {
+  _currentLogTab = 'log';
   renderLogList();
+  _updateLogTabUI('log');
   document.getElementById('log-modal').classList.add('show');
+  const tabBar = document.getElementById('log-tab-bar');
+  if (tabBar) tabBar.style.display = (gameMode === 'solo') ? 'flex' : 'none';
 }
 
 function closeLogModal() {
   document.getElementById('log-modal').classList.remove('show');
+}
+
+function switchLogTab(tab) {
+  _currentLogTab = tab;
+  _updateLogTabUI(tab);
+  if (tab === 'log') {
+    renderLogList();
+  } else {
+    renderCPUInfoPanel();
+  }
+}
+
+function _updateLogTabUI(tab) {
+  const logTab = document.getElementById('log-tab-log');
+  const cpuTab = document.getElementById('log-tab-cpu');
+  const logList = document.getElementById('log-list');
+  const cpuPanel = document.getElementById('cpu-info-panel');
+  if (!logTab || !cpuTab) return;
+  if (tab === 'log') {
+    logTab.style.background = 'rgba(0,245,255,0.1)';
+    logTab.style.borderBottom = '2px solid var(--accent)';
+    logTab.style.color = 'var(--accent)';
+    cpuTab.style.background = 'transparent';
+    cpuTab.style.borderBottom = '2px solid transparent';
+    cpuTab.style.color = 'var(--text-dim)';
+    if (logList) logList.style.display = '';
+    if (cpuPanel) cpuPanel.style.display = 'none';
+  } else {
+    cpuTab.style.background = 'rgba(255,0,110,0.1)';
+    cpuTab.style.borderBottom = '2px solid var(--accent2)';
+    cpuTab.style.color = 'var(--accent2)';
+    logTab.style.background = 'transparent';
+    logTab.style.borderBottom = '2px solid transparent';
+    logTab.style.color = 'var(--text-dim)';
+    if (logList) logList.style.display = 'none';
+    if (cpuPanel) cpuPanel.style.display = 'flex';
+  }
+}
+
+function renderCPUInfoPanel() {
+  const panel = document.getElementById('cpu-info-panel');
+  if (!panel) return;
+
+  const lvNames = ['RANDOM 🐣', 'BASIC 🤔', 'SMART 🧠', 'MASTER 👑'];
+  const lvColors = ['#8888aa','#00b4ff','#ffd600','#ff006e'];
+  const level = (typeof soloAILevel !== 'undefined') ? soloAILevel : 0;
+  const color = lvColors[level];
+  const name = lvNames[level];
+
+  const eHP = Math.max(0, battle.enemyHP);
+  const pHP = Math.max(0, battle.playerHP);
+  const eHand = battle.enemyHand ? battle.enemyHand.length : 0;
+  const eDeck = battle.enemyDeckRemain ? battle.enemyDeckRemain.length : 0;
+  const eCombo = battle.enemyCombo || 0;
+  const RPS_EMOJI = { guu:'✊', paa:'✋', choki:'✌️' };
+  const RPS_NAME  = { guu:'グー', paa:'パー', choki:'チョキ' };
+
+  // CPU デッキ一覧
+  const fullDeck = battle.cpuFullDeck || [];
+  let deckHTML = '';
+  if (fullDeck.length > 0) {
+    const rankColor = { S:'var(--s-color)', A:'var(--a-color)', B:'var(--b-color)' };
+    deckHTML = `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--text-dim);letter-spacing:2px;margin-bottom:10px;">🃏 CPU デッキ (${fullDeck.length}枚)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${fullDeck.map(id => {
+            const c = getCard(id);
+            if (!c) return '';
+            const used = !battle.enemyDeckRemain.includes(id) && !battle.enemyHand.includes(id) && !battle.enemySelectedCards.includes(id);
+            return `<div style="background:${used?'rgba(0,0,0,0.5)':c.rank==='S'?'rgba(255,0,110,0.12)':c.rank==='A'?'rgba(255,140,0,0.10)':'rgba(0,180,255,0.09)'};border:1px solid ${used?'rgba(255,255,255,0.08)':rankColor[c.rank]};border-radius:8px;padding:5px 8px;display:flex;align-items:center;gap:4px;opacity:${used?'0.45':'1'};">
+              <span style="font-size:14px;">${c.icon}</span>
+              <span style="font-size:10px;color:${used?'var(--text-dim)':rankColor[c.rank]};font-weight:700;">${c.name}</span>
+              <span style="font-family:'Orbitron',monospace;font-size:9px;color:${rankColor[c.rank]};">[${c.rank}]</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:var(--text-dim);">暗色=使用済み/手札なし</div>
+      </div>`;
+  }
+
+  // ターン別ログ
+  let turnLogHTML = '';
+  if (_cpuTurnLogs.length === 0) {
+    turnLogHTML = `<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:16px;font-family:'Orbitron',monospace;">ターンデータなし</div>`;
+  } else {
+    turnLogHTML = [..._cpuTurnLogs].reverse().map(log => {
+      const handStr = log.hand ? `${RPS_EMOJI[log.hand]} ${RPS_NAME[log.hand]}` : '—';
+      const cardsStr = log.cards.length > 0
+        ? log.cards.map(id => { const c = getCard(id); return c ? `${c.icon}${c.name}[${c.rank}]` : id; }).join(' / ')
+        : 'なし';
+      const reasonStr = log.adjustReason
+        ? `${log.handReason} → 補正: ${log.adjustReason}`
+        : log.handReason;
+      return `
+        <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-family:'Orbitron',monospace;font-size:11px;color:var(--accent3);font-weight:700;">TURN ${log.turn}</span>
+            <span style="font-size:10px;color:var(--text-dim);">CPU:${log.enemyHP}HP / 相手:${log.playerHP}HP</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+            <span style="font-size:18px;">${log.hand ? RPS_EMOJI[log.hand] : '?'}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--text);">${handStr}</span>
+          </div>
+          <div style="font-size:11px;color:#ffd600;margin-bottom:4px;">🃏 使用カード: <span style="color:var(--text);">${cardsStr}</span></div>
+          <div style="font-size:10px;color:var(--text-dim);line-height:1.5;border-top:1px solid rgba(255,255,255,0.05);padding-top:5px;margin-top:2px;">
+            💡 ${log.situation}<br>
+            🎯 手の理由: ${reasonStr}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  panel.innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <div style="flex:1;background:rgba(255,0,110,0.08);border:1px solid rgba(255,0,110,0.2);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:9px;color:var(--text-dim);font-family:'Orbitron',monospace;margin-bottom:2px;">CPU HP</div>
+        <div style="font-size:22px;font-weight:900;color:${eHP<=30?'#ff006e':eHP<=60?'#ffd600':'#00ff88'};font-family:'Orbitron',monospace;">${eHP}</div>
+      </div>
+      <div style="flex:1;background:rgba(0,245,255,0.06);border:1px solid rgba(0,245,255,0.15);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:9px;color:var(--text-dim);font-family:'Orbitron',monospace;margin-bottom:2px;">相手HP</div>
+        <div style="font-size:22px;font-weight:900;color:${pHP<=30?'#ff006e':pHP<=60?'#ffd600':'#00ff88'};font-family:'Orbitron',monospace;">${pHP}</div>
+      </div>
+      <div style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:9px;color:var(--text-dim);font-family:'Orbitron',monospace;margin-bottom:2px;">手札</div>
+        <div style="font-size:20px;font-weight:900;color:var(--accent3);font-family:'Orbitron',monospace;">${eHand}</div>
+      </div>
+      <div style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:9px;color:var(--text-dim);font-family:'Orbitron',monospace;margin-bottom:2px;">デッキ残</div>
+        <div style="font-size:20px;font-weight:900;color:var(--accent);font-family:'Orbitron',monospace;">${eDeck}</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:10px;">
+      <span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:${color};">${name}</span>
+      <span style="font-size:11px;color:var(--text-dim);">TURN ${battle.turn || 1} | COMBO ${eCombo >= 2 ? '🔥×'+eCombo : eCombo > 0 ? '×'+eCombo : '—'}</span>
+    </div>
+    ${deckHTML}
+    <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px;">📊 ターン別 思考ログ</div>
+    ${turnLogHTML}
+  `;
 }
 
 function showGearBtn(visible) {
