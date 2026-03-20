@@ -3231,6 +3231,9 @@ function startSoloBattle() {
   battle.playerDeclaration = null; battle.enemyDeclaration = null;
   battle.playerDeclBonus = 0; battle.enemyDeclBonus = 0;
 
+  // MASTERのAIタイプを決定（0=ごり押し型, 1=慎重型）
+  battle.masterAIType = Math.random() < 0.2 ? 0 : 1;
+
   showScreen('battle');
   clearBattleLog();
   clearCPUTurnLogs();
@@ -3438,14 +3441,97 @@ function _getCPUActionMaster(callerLabel) {
     if (c.rank === 'S') score += 10;
     if (c.rank === 'A') score += 5;
 
+    // ── 過剰回復ペナルティ ──
+    // このカードによる回復量（heal + drain）がHPを100超えてしまう分を無駄として減点する
+    const totalHealAmount = (e.heal || 0) + (e.drain || 0);
+    if (totalHealAmount > 0) {
+      const actualHeal = Math.min(totalHealAmount, Math.max(0, 100 - enemyHP));
+      const wastedHeal = totalHealAmount - actualHeal;
+      if (wastedHeal > 0) {
+        // 無駄な回復量に応じてスコアを減点（HP状況が深刻なほど減点を弱める）
+        const penaltyRate = isCPUCritical ? 1.5 : isCPUDanger ? 2.0 : isCPULow ? 2.5 : 3.0;
+        score -= wastedHeal * penaltyRate;
+      }
+    }
+
     return score;
   };
 
-  // ── カード選択（スコア上位を選択、最大3枚） ──
-  const scored = handCopy.map(id => ({ id, score: scoreCard(id) })).sort((a,b) => b.score - a.score);
-  const chosen = [];
-  for (let i = 0; i < Math.min(3, scored.length); i++) {
-    if (scored[i].score > 0) chosen.push(scored[i].id);
+  // ── MASTERのAIタイプ取得（0=ごり押し型, 1=慎重型）──
+  const masterAIType = (typeof battle.masterAIType !== 'undefined') ? battle.masterAIType : 0;
+  const currentTurn = battle.turn || 1;
+  // 慎重型が上位3枚フル投入に移行する条件: 手札6枚以上 OR 5ターン以降
+  const isLatePhase = handCopy.length >= 6 || currentTurn >= 5;
+  const isEarlyPhase = !isLatePhase;
+
+  // ── ドロー系カードか判定（序盤優先選択用）──
+  const isDrawCard = (id) => {
+    const c = getCard(id);
+    return c && (c.effect.extraDraw || c.effect.recallLastUsed);
+  };
+
+  // ── カード選択（スコア上位を選択、最大3枚）──
+  // 序盤スコアリング: ドロー系カードに追加ボーナスを乗せた再スコアリング
+  const earlyScoreCard = (id) => {
+    let s = scoreCard(id);
+    if (isDrawCard(id)) {
+      const c = getCard(id);
+      s += 30 + (c.effect.extraDraw || 0) * 5; // ドロー枚数が多いほど高評価
+    }
+    return s;
+  };
+
+  const scored = isEarlyPhase
+    ? handCopy.map(id => ({ id, score: earlyScoreCard(id) })).sort((a,b) => b.score - a.score)
+    : handCopy.map(id => ({ id, score: scoreCard(id) })).sort((a,b) => b.score - a.score);
+  let chosen = [];
+
+  // ── ダメージを0にする効果を持つカードか判定 ──
+  const isShieldCard = (id) => {
+    const c = getCard(id);
+    return c && (c.effect.shield);
+  };
+
+  if (masterAIType === 0) {
+    // ── ごり押し型: スコア上位を出せるだけ出す（最大3枚）──
+    for (let i = 0; i < Math.min(3, scored.length); i++) {
+      if (scored[i].score > 0) chosen.push(scored[i].id);
+    }
+  } else {
+    // ── 慎重型 ──
+    if (!isCPUCritical && !isCPUDanger && isEarlyPhase) {
+      // 序盤（HP問題なし、手札6枚未満かつ4ターン以内）: 0枚か1枚、弱いレアリティ優先（ドロー系は最優先）
+      const rankOrder = { 'B': 0, 'A': 1, 'S': 2 };
+      const sortedByWeakRank = [...handCopy]
+        .filter(id => { const c = getCard(id); return c && earlyScoreCard(id) > 0; })
+        .sort((a, b) => {
+          // ドロー系は最優先
+          if (isDrawCard(a) && !isDrawCard(b)) return -1;
+          if (!isDrawCard(a) && isDrawCard(b)) return 1;
+          // 次にレアリティが低い順
+          const ca = getCard(a), cb = getCard(b);
+          return (rankOrder[ca?.rank] || 0) - (rankOrder[cb?.rank] || 0);
+        });
+      const numToPlay = Math.random() < 0.4 ? 0 : 1; // 40%で0枚、60%で1枚
+      for (let i = 0; i < numToPlay && i < sortedByWeakRank.length; i++) {
+        chosen.push(sortedByWeakRank[i]);
+      }
+    } else {
+      // 後半（手札6枚以上 or 5ターン以降）またはHP危険時: スコア上位を最大3枚
+      for (let i = 0; i < Math.min(3, scored.length); i++) {
+        if (scored[i].score > 0) chosen.push(scored[i].id);
+      }
+    }
+  }
+
+  // ── MASTERのみ: ダメージ0効果（shield）を持つカードを同一ターンに2枚以上使用しない ──
+  if (callerLabel === 'MASTERロジック' || callerLabel.includes('MASTER')) {
+    const shieldCards = chosen.filter(id => isShieldCard(id));
+    if (shieldCards.length >= 2) {
+      // シールドカードを1枚だけ残して残りを除外
+      const keepShield = shieldCards[0];
+      chosen = chosen.filter(id => !isShieldCard(id) || id === keepShield);
+    }
   }
 
   // ── STEP 1: 手の初期決定（HP状況も加味） ──
@@ -3457,11 +3543,21 @@ function _getCPUActionMaster(callerLabel) {
   const canFollowDecl = !!myDecl;
   const canCombo      = !!(battle.enemyLastHand && (battle.enemyCombo || 0) >= 1);
 
+  // ── 「相手予告に勝つ手」と「自分の予告」が同じかチェック ──
+  const counterOfPlayerDecl = playerDecl ? counterMap[playerDecl] : null;
+  const counterSameAsMyDecl = !!(counterOfPlayerDecl && myDecl && counterOfPlayerDecl === myDecl);
+
   if (isCPUCritical) {
     // 瀕死時: 手の選択でも生存を意識（相手予告カウンターを最優先）
     if (canCounter && roll < 0.50) {
-      chosenHand = counterMap[playerDecl];
-      handReason = `【瀕死】相手予告(${playerDecl})カウンター(生存優先)`;
+      // 相手予告カウンターと自分予告が一致する場合はランダムにする
+      if (counterSameAsMyDecl) {
+        chosenHand = hands[Math.floor(Math.random() * 3)];
+        handReason = `【瀕死】予告一致→ランダム選択`;
+      } else {
+        chosenHand = counterMap[playerDecl];
+        handReason = `【瀕死】相手予告(${playerDecl})カウンター(生存優先)`;
+      }
     } else if (canFollowDecl && roll < 0.75) {
       chosenHand = myDecl;
       handReason = `【瀕死】自分の予告(${myDecl})通り`;
@@ -3472,8 +3568,13 @@ function _getCPUActionMaster(callerLabel) {
   } else if (isPlayerCritical) {
     // 相手瀕死: 攻撃的に予告カウンターを狙う
     if (canCounter && roll < 0.45) {
-      chosenHand = counterMap[playerDecl];
-      handReason = `【相手瀕死】予告カウンター(フィニッシュ狙い)`;
+      if (counterSameAsMyDecl) {
+        chosenHand = hands[Math.floor(Math.random() * 3)];
+        handReason = `【相手瀕死】予告一致→ランダム選択`;
+      } else {
+        chosenHand = counterMap[playerDecl];
+        handReason = `【相手瀕死】予告カウンター(フィニッシュ狙い)`;
+      }
     } else if (canFollowDecl && roll < 0.65) {
       chosenHand = myDecl;
       handReason = `【相手瀕死】予告通り(${myDecl})`;
@@ -3487,8 +3588,13 @@ function _getCPUActionMaster(callerLabel) {
   } else {
     // 通常の手選択ロジック（30/30/30/10）
     if (canCounter && roll < 0.30) {
-      chosenHand = counterMap[playerDecl];
-      handReason = `相手予告(${playerDecl})へのカウンター`;
+      if (counterSameAsMyDecl) {
+        chosenHand = hands[Math.floor(Math.random() * 3)];
+        handReason = `予告一致→ランダム選択`;
+      } else {
+        chosenHand = counterMap[playerDecl];
+        handReason = `相手予告(${playerDecl})へのカウンター`;
+      }
     } else if (canFollowDecl && roll < 0.60) {
       chosenHand = myDecl;
       handReason = `自分の予告(${myDecl})通りの手`;
