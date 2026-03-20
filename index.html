@@ -1468,6 +1468,47 @@ body {
   letter-spacing: 1px; line-height: 1.7;
 }
 .diff-preview-box span { color: var(--accent3); font-weight: 700; }
+
+/* HP変化トグル */
+.diff-toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 12px;
+}
+.diff-toggle-label {
+  font-size: 12px; color: var(--text-dim); line-height: 1.5;
+}
+.diff-toggle-wrap {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.diff-toggle-switch {
+  position: relative; width: 52px; height: 28px; cursor: pointer;
+}
+.diff-toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.diff-toggle-track {
+  position: absolute; inset: 0; border-radius: 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  transition: background 0.25s, border-color 0.25s;
+}
+.diff-toggle-switch input:checked + .diff-toggle-track {
+  background: rgba(0,245,255,0.2); border-color: var(--accent);
+}
+.diff-toggle-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--text-dim);
+  transition: transform 0.25s, background 0.25s;
+  box-shadow: 0 0 6px rgba(0,0,0,0.4);
+}
+.diff-toggle-switch input:checked ~ .diff-toggle-thumb {
+  transform: translateX(24px);
+  background: var(--accent);
+  box-shadow: 0 0 10px rgba(0,245,255,0.6);
+}
+.diff-toggle-state {
+  font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
+  min-width: 26px; color: var(--text-dim); transition: color 0.2s;
+}
+.diff-toggle-state.on { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -1532,6 +1573,24 @@ body {
         <div class="ai-level-icon">👑</div>
         <div class="ai-level-name">MASTER</div>
         <div class="ai-level-desc">最適な手とカードを選択し、積極的に予告も活用</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HP変化 -->
+  <div class="diff-section">
+    <div class="diff-section-title">❤️ CPU HP変化</div>
+    <div class="diff-toggle-row">
+      <div class="diff-toggle-label">
+        ONにするとCPUの初期HPが<br>敵デッキの合計コスト値に変化します
+      </div>
+      <div class="diff-toggle-wrap">
+        <label class="diff-toggle-switch" onclick="updateDiffDisplay()">
+          <input type="checkbox" id="diff-hp-toggle">
+          <div class="diff-toggle-track"></div>
+          <div class="diff-toggle-thumb"></div>
+        </label>
+        <span class="diff-toggle-state" id="diff-hp-state">OFF</span>
       </div>
     </div>
   </div>
@@ -2150,6 +2209,7 @@ function startFromTitle(mode) {
 // ============================================================
 let soloAILevel = 0;       // 0=Random 1=Basic 2=Smart 3=Master
 let soloMaxCost = 200;     // 80~320
+let soloHpChange = false;  // HP変化ON/OFF
 
 const AI_LEVEL_LABELS = ['RANDOM 🐣', 'BASIC 🤔', 'SMART 🧠', 'MASTER 👑'];
 const AI_LEVEL_DESCS = [
@@ -2180,9 +2240,17 @@ function updateDiffDisplay() {
   const costSlider = document.getElementById('diff-cost-slider');
   soloMaxCost = parseInt(costSlider.value);
   document.getElementById('diff-cost-val').textContent = soloMaxCost;
+  const hpToggle = document.getElementById('diff-hp-toggle');
+  soloHpChange = hpToggle ? hpToggle.checked : false;
+  const stateEl = document.getElementById('diff-hp-state');
+  if (stateEl) {
+    stateEl.textContent = soloHpChange ? 'ON' : 'OFF';
+    stateEl.classList.toggle('on', soloHpChange);
+  }
   const preview = document.getElementById('diff-preview');
+  const cpuHpLabel = soloHpChange ? ` / CPU HP: <span>${soloMaxCost}</span>` : '';
   preview.innerHTML =
-    `敵デッキ最大コスト: <span>${soloMaxCost}</span> (${COST_LABEL[soloMaxCost] || soloMaxCost})<br>` +
+    `敵デッキ最大コスト: <span>${soloMaxCost}</span> (${COST_LABEL[soloMaxCost] || soloMaxCost})${cpuHpLabel}<br>` +
     `AI: <span>${AI_LEVEL_LABELS[soloAILevel]}</span>`;
 }
 
@@ -3209,7 +3277,9 @@ function startSoloBattle() {
   battle.cpuFullDeck = [...aiDeck]; // CPU情報パネル用にフルデッキを保存
 
   // init battle state
-  battle.playerHP = 100; battle.enemyHP = 100;
+  battle.playerHP = 100;
+  // HP変化ONの場合はCPUのHPをデッキコストと同じ値にする
+  battle.enemyHP = soloHpChange ? soloMaxCost : 100;
   battle.turn = 1;
   battle.playerDmgUp = 0; battle.playerDmgReduce = 0; battle.playerShield = false;
   battle.enemyDmgUp = 0; battle.enemyDmgReduce = 0; battle.enemyShield = false;
@@ -3273,7 +3343,9 @@ function getCPUAction() {
     const chosen = [];
     const handCopy = [...battle.enemyHand];
     const enemyHP = battle.enemyHP;
-    if (enemyHP <= 30) {
+    const basicCpuMaxHP = (soloHpChange && soloMaxCost) ? soloMaxCost : 100;
+    const basicDangerThreshold = basicCpuMaxHP * 0.30; // 30%以下で瀕死扱い
+    if (enemyHP <= basicDangerThreshold) {
       const healCards = handCopy.filter(id => {
         const c = getCard(id);
         return c && (c.effect.heal || c.effect.dmgReduce || c.effect.shield || c.effect.drain);
@@ -3287,7 +3359,7 @@ function getCPUAction() {
       const shuffled = shuffle([...handCopy]);
       for (let i = 0; i < Math.max(0, numCards); i++) chosen.push(shuffled[i]);
     }
-    const situation1 = enemyHP <= 30 ? `CPU瀕死(HP${enemyHP})→回復・防御優先` : `通常→ランダム選択`;
+    const situation1 = enemyHP <= basicDangerThreshold ? `CPU瀕死(HP${enemyHP})→回復・防御優先` : `通常→ランダム選択`;
     _recordCPUTurnLog(battle.turn, hand, chosen, 'ランダム', '', situation1, battle.enemyHP, battle.playerHP);
     return { hand, cards: chosen };
   }
@@ -3310,11 +3382,13 @@ function getCPUAction() {
     } else {
       chosenHand = hands[Math.floor(Math.random() * 3)];
     }
+    const smartCpuMaxHP = (soloHpChange && soloMaxCost) ? soloMaxCost : 100;
+    const smartCritThreshold = smartCpuMaxHP * 0.25; // 25%以下で瀕死扱い
     const scoreCard2 = (id) => {
       const c = getCard(id);
       if (!c) return 0;
       let score = 0;
-      if (enemyHP <= 25) {
+      if (enemyHP <= smartCritThreshold) {
         score += (c.effect.heal || 0) * 2;
         score += (c.effect.dmgReduce || 0) * 1.5;
         score += c.effect.shield ? 30 : 0;
@@ -3338,7 +3412,7 @@ function getCPUAction() {
       if (scored2[i].score > 0 && Math.random() < 0.75) chosen.push(scored2[i].id);
     }
     const smartHandReason = playerDecl && Math.random() < 0.7 ? `相手予告(${playerDecl})カウンター` : 'ランダム';
-    const smartSit = enemyHP <= 25 ? `CPU瀕死(HP${enemyHP})→回復優先` : playerHP <= 25 ? `相手瀕死(HP${playerHP})→攻撃優先` : `通常→HP/予告/デッキ考慮`;
+    const smartSit = enemyHP <= smartCritThreshold ? `CPU瀕死(HP${enemyHP})→回復優先` : playerHP <= 25 ? `相手瀕死(HP${playerHP})→攻撃優先` : `通常→HP/予告/デッキ考慮`;
     _recordCPUTurnLog(battle.turn, chosenHand, chosen, smartHandReason, '', smartSit, battle.enemyHP, battle.playerHP);
     return { hand: chosenHand, cards: chosen };
   }
@@ -3359,11 +3433,13 @@ function _getCPUActionMaster(callerLabel) {
   const deckLeft = battle.enemyDeckRemain.length;
 
   // ── HP状況の分類 ──
-  const isCPUCritical   = enemyHP <= 20;   // 瀕死（最優先回復）
-  const isCPUDanger     = enemyHP <= 40;   // 危険圏
-  const isCPULow        = enemyHP <= 60;   // 余裕なし
-  const isPlayerCritical= playerHP <= 20;  // 相手瀕死（フィニッシュ狙い）
-  const isPlayerLow     = playerHP <= 40;  // 相手危険圏（攻め時）
+  // HP変化ONの場合、CPUの最大HPはsoloMaxCost値になるので閾値をスケール調整する
+  const cpuMaxHP = (soloHpChange && soloMaxCost) ? soloMaxCost : 100;
+  const isCPUCritical   = enemyHP <= cpuMaxHP * 0.20;   // 瀕死（最優先回復）
+  const isCPUDanger     = enemyHP <= cpuMaxHP * 0.40;   // 危険圏
+  const isCPULow        = enemyHP <= cpuMaxHP * 0.60;   // 余裕なし
+  const isPlayerCritical= playerHP <= 20;  // 相手瀕死（フィニッシュ狙い）＊プレイヤーは常に100基準
+  const isPlayerLow     = playerHP <= 40;  // 相手危険圏（攻め時）＊プレイヤーは常に100基準
 
   // ── カードスコアリング（状況重み付け強化版）──
   const scoreCard = (id) => {
@@ -3445,7 +3521,7 @@ function _getCPUActionMaster(callerLabel) {
     // このカードによる回復量（heal + drain）がHPを100超えてしまう分を無駄として減点する
     const totalHealAmount = (e.heal || 0) + (e.drain || 0);
     if (totalHealAmount > 0) {
-      const actualHeal = Math.min(totalHealAmount, Math.max(0, 100 - enemyHP));
+      const actualHeal = Math.min(totalHealAmount, Math.max(0, cpuMaxHP - enemyHP));
       const wastedHeal = totalHealAmount - actualHeal;
       if (wastedHeal > 0) {
         // 無駄な回復量に応じてスコアを減点（HP状況が深刻なほど減点を弱める）
@@ -4594,8 +4670,9 @@ async function applyCardEffect(owner, cardId, breakdown) {
   const cardLabel = `${card.icon}${card.name}`;
 
   if (e.heal) {
+    const _healEnemyMax = (gameMode === 'solo' && soloHpChange && soloMaxCost) ? soloMaxCost : 100;
     if (isPlayer) { battle.playerHP = Math.min(100, battle.playerHP + e.heal); }
-    else { battle.enemyHP = Math.min(100, battle.enemyHP + e.heal); }
+    else { battle.enemyHP = Math.min(_healEnemyMax, battle.enemyHP + e.heal); }
     updateHPDisplay();
     spawnDmgNumber('+' + e.heal, isPlayer ? '#00ff88' : '#ff8c00', isPlayer);
     Audio.sfx('heal');
@@ -4628,7 +4705,8 @@ async function applyCardEffect(owner, cardId, breakdown) {
       }
     } else {
       battle.playerHP = Math.max(0, battle.playerHP - e.drain);
-      battle.enemyHP = Math.min(100, battle.enemyHP + e.drain);
+      const _drainEnemyMax = (gameMode === 'solo' && soloHpChange && soloMaxCost) ? soloMaxCost : 100;
+      battle.enemyHP = Math.min(_drainEnemyMax, battle.enemyHP + e.drain);
       if (breakdown) {
         breakdown.push({ target: 'player', icon: '🩸', label: `${cardLabel} ドレイン`, delta: -e.drain, type: 'plus' });
         breakdown.push({ target: 'enemy', icon: '💚', label: `${cardLabel} ドレイン回復`, delta: +e.drain, type: 'heal' });
@@ -4666,8 +4744,9 @@ async function applyCardEffect(owner, cardId, breakdown) {
     Audio.sfx('damage');
   }
   if (e.healBonus) {
+    const _healBonusEnemyMax = (gameMode === 'solo' && soloHpChange && soloMaxCost) ? soloMaxCost : 100;
     if (isPlayer) { battle.playerHP = Math.min(100, battle.playerHP + e.healBonus); }
-    else { battle.enemyHP = Math.min(100, battle.enemyHP + e.healBonus); }
+    else { battle.enemyHP = Math.min(_healBonusEnemyMax, battle.enemyHP + e.healBonus); }
     updateHPDisplay();
     spawnDmgNumber('+' + e.healBonus, '#00ff88', isPlayer);
     Audio.sfx('heal');
@@ -5534,8 +5613,10 @@ function endBattle() {
 function updateHPDisplay() {
   const ph = Math.max(0, battle.playerHP);
   const eh = Math.max(0, battle.enemyHP);
+  // HP変化ON時はCPUの最大HPがsoloMaxCostになるのでバー割合を調整
+  const enemyMaxHP = (gameMode === 'solo' && soloHpChange && soloMaxCost) ? soloMaxCost : 100;
   document.getElementById('player-hp-bar').style.width = ph + '%';
-  document.getElementById('enemy-hp-bar').style.width = eh + '%';
+  document.getElementById('enemy-hp-bar').style.width = Math.min(100, (eh / enemyMaxHP) * 100) + '%';
   document.getElementById('player-hp-val').textContent = ph;
   document.getElementById('enemy-hp-val').textContent = eh;
 }
