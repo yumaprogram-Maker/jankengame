@@ -5382,6 +5382,21 @@ function endBattle() {
     addLog('result-lose', `💀 DEFEATED - ${enemyName} に敗れた...`, `全${battle.turn}ターン`);
   }
   result.classList.add('show');
+
+  // 誤操作防止: 勝敗画面表示から1秒間はボタンを無効化
+  const resultBtns = result.querySelectorAll('button');
+  resultBtns.forEach(btn => {
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '0.35';
+    btn.style.transition = 'opacity 0.4s';
+  });
+  setTimeout(() => {
+    resultBtns.forEach(btn => {
+      btn.style.pointerEvents = '';
+      btn.style.opacity = '';
+    });
+  }, 1000);
+
   _battleEndTriggered = true;
   _detachBattleEndListener();
   // 両者が確認した後にルームを削除する
