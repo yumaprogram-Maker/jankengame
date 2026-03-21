@@ -3655,6 +3655,16 @@ function _getCPUActionMaster(callerLabel) {
     }
   }
 
+  // ── MASTERのみ: 自分のHPが相手のHPより高い場合は運命逆転(swapHP)を絶対に選ばない ──
+  if (callerLabel === 'MASTERロジック' || callerLabel.includes('MASTER')) {
+    if (enemyHP > playerHP) {
+      chosen = chosen.filter(id => {
+        const c = getCard(id);
+        return !(c && c.effect.swapHP);
+      });
+    }
+  }
+
   // ── STEP 1: 手の初期決定（HP状況も加味） ──
   const roll = Math.random();
   let chosenHand;
